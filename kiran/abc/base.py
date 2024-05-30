@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import msgspec
-from .enums import ChatType
+from .enums import ChatType, MessageOriginType
 
 
 class BaseUser(msgspec.Struct):
@@ -32,4 +34,20 @@ class BaseChat(msgspec.Struct):
     type: ChatType
     """
     Type of chat, can be either 'private', 'group', 'supergroup' or 'channel'.
+    """
+
+
+class BaseMessageOrigin(msgspec.Struct):
+    """
+    This object represents a message origin.
+    """
+
+    type: MessageOriginType
+    """
+    Origin type.
+    """
+
+    date: int
+    """
+    Date the message was sent originally in Unix time.
     """

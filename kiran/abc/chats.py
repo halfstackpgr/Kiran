@@ -1,6 +1,17 @@
+from __future__ import annotations
+
 import typing
 from .base import BaseChat
-from .subtype import ChatPhoto, BirthDate, BusinessIntro, BusinessLocation, BusinessOpeningHours, ReactionTypeCustomEmoji, ReactionTypeEmoji
+from .subtype import (
+    ChatPhoto,
+    BirthDate,
+    BusinessIntro,
+    BusinessLocation,
+    BusinessOpeningHours,
+    ReactionTypeCustomEmoji,
+    ReactionTypeEmoji,
+)
+from .message import Message
 
 
 class Chat(BaseChat):
@@ -28,7 +39,7 @@ class Chat(BaseChat):
     """
     True, if the supergroup is a forum has
     """
-    
+
 
 class ChatInfo(Chat):
     """
@@ -71,7 +82,9 @@ class ChatInfo(Chat):
     """
     For private chats, the personal channel of the user
     """
-    available_reactions: typing.Optional[typing.List[typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]]]
+    available_reactions: typing.Optional[
+        typing.List[typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]]
+    ]
     """
     List of available reactions allowed in the chat. If omitted, then all [emoji reactions](https://core.telegram.org/bots/api#reactiontypeemoji) are allowed.
     """
@@ -123,5 +136,4 @@ class ChatInfo(Chat):
     """
     Primary invite link, for groups, supergroups and channel chats
     """
-    pinned_message: ...
-    
+    pinned_message: typing.Optional[Message]
