@@ -82,9 +82,7 @@ class ChatInfo(Chat):
     """
     For private chats, the personal channel of the user
     """
-    available_reactions: typing.Optional[
-        typing.List[typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]]
-    ]
+    available_reactions: typing.Optional[typing.List[typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]]]
     """
     List of available reactions allowed in the chat. If omitted, then all [emoji reactions](https://core.telegram.org/bots/api#reactiontypeemoji) are allowed.
     """

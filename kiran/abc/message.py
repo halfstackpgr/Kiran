@@ -26,7 +26,7 @@ from .subtype import (
     Venue,
     Location,
     MessageAutoDeleteTimerChanged,
-    InaccessibleMessage
+    InaccessibleMessage,
 )
 
 
@@ -336,74 +336,8 @@ class Message(msgspec.Struct):
     The supergroup has been migrated from a group with the specified identifier. 
     """
     pinned_message: typing.Optional[typing.Union[Message, InaccessibleMessage]]
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    from_user: typing.Optional[typing.Union[User, MyUser]] = msgspec.field(
-        name="from", default=None
-    )
+
+    from_user: typing.Optional[typing.Union[User, MyUser]] = msgspec.field(name="from", default=None)
     """
     Sender of the message; empty for messages sent to channels. For backward compatibility, the field contains a fake sender user in non-channel chats, if the message was sent on behalf of a chat.
     """
