@@ -110,19 +110,59 @@ class KiranLogger:
         return repr(self.log_file) if self.log_file else ""
 
     def _get_date(self) -> str:
+        """
+        Gets the current date and time.
+
+        Returns
+        -------
+        str
+            The current date and time.
+        """
         return f"{colorama.Fore.CYAN}{datetime.datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}{colorama.Fore.RESET}"
 
     def _add_color(self, message: str, log_type: LoggingType) -> str:
+        """
+        Adds color to the message.
+
+        Parameters
+        ----------
+        message : str
+            The message to be logged
+        log_type : LoggingType
+            The log type to be used
+
+        Returns
+        -------
+        str
+            The message with color added.
+        """
+        log_color = colorama.Fore.WHITE
+        if log_type == "info":
+            log_color = colorama.Fore.GREEN
+        if log_type == "warning":
+            log_color = colorama.Fore.RED
+        if log_type == "debug":
+            log_color = colorama.Fore.LIGHTBLACK_EX
+        if log_type == "error":
+            log_color = colorama.Fore.YELLOW
         if self.enable_colors:
-            return f"{self._get_date()}{log_type}{message}{colorama.Fore.RESET}"
+            return f"Kiran: {self._get_date()} - {log_type.capitalize()} - {log_color}{message}{colorama.Fore.RESET}"
         else:
             return message
 
     def _save_logs(self, message: str) -> None:
-        if self.file_session:
-            self.file_session.write(f"{self._get_date()}{message}\n")
+        """
+        Saves the log.
 
-    def _check_to_log(self, log_type: LoggingType) -> bool:  # type: ignore
+        Parameters
+        ----------
+        message : str
+            The message to be logged
+        """
+        if self.file_session:
+            self.file_session.write(f"{self._get_date()} - {message}\n")
+
+    def _check_to_log(self, log_type: LoggingType) -> bool:
         """
         Check if the log type should be logged.
 
@@ -136,18 +176,30 @@ class KiranLogger:
         bool
             True if the log type should be logged, False otherwise.
         """
-        map_of_logging: typing.Dict[LoggingLevel, typing.List[LoggingType]] = {
-            "basic": typing.cast(typing.List[LoggingType], ["info", "warning"]),
-            "debug": typing.cast(typing.List[LoggingType], ["info", "warning", "debug", "error"]),
-            "no-error": typing.cast(typing.List[LoggingType], ["info", "warning", "debug", "error"]),
+        map_of_logging = {
+            "basic": ["info", "warning"],
+            "debug": ["info", "warning", "debug", "error"],
+            "no-error": ["info", "warning", "debug", "error"],
         }
-        set_level: LoggingLevel = typing.cast(LoggingLevel, self.log_settings.level)
-        pick_theme: typing.Optional[typing.List[LoggingType]] = map_of_logging.get(set_level)
-        print(pick_theme)
+        set_level = typing.cast(LoggingLevel, self.log_settings.level)
+        pick_theme = map_of_logging.get(set_level)
+        return log_type in pick_theme if pick_theme is not None else False
 
     def _clean_log(self, message: str, log_type: LoggingType) -> None:
-        if self._check_to_log(log_type):
-            sys.stdout.write(self._add_color(message, log_type))
+        """
+        Logging in a clean manner using base system module.
+
+        Parameters
+        ----------
+        message : str
+            The message to be logged
+        log_type : LoggingType
+            The log type to be used
+        """
+        if self.enable_colors:
+            sys.stdout.write(f"{self._add_color(message, log_type)}\n")
+        else:
+            sys.stdout.write(f"{message}\n")
 
     def log(self, message: str, log_type: LoggingType) -> None:
         """
@@ -164,3 +216,10 @@ class KiranLogger:
             self._clean_log(message, log_type)
         else:
             print(self._add_color(message, log_type))
+
+    def clear_logs(self) -> None:
+        """
+        Clears the terminal.
+        """
+        sys.stdout.write("\033[H\033[J")
+        sys.stdout.flush()
