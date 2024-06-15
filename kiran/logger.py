@@ -54,7 +54,7 @@ class LoggerSettings:
 
     def __init__(
         self,
-        level: LoggingType,
+        level: LoggingLevel,
         log_file: typing.Optional[typing.Union[str, pathlib.Path]] = None,
         clean_logs: typing.Optional[bool] = True,
         enable_colors: typing.Optional[bool] = True,
@@ -64,8 +64,14 @@ class LoggerSettings:
         self.clean_logs = clean_logs
         self.enable_colors = enable_colors
 
+    def __repr__(self) -> str:
+        return f"\nLevel: {self.level}\nLog File: {self.log_file}\nClean Logs: {self.clean_logs}\nEnable Colors: {self.enable_colors}"
 
-DefaultSettings = LoggerSettings("info", None, True, True)
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+DefaultSettings = LoggerSettings("basic", None, True, True)
 
 
 class KiranLogger:
@@ -98,6 +104,7 @@ class KiranLogger:
             self.enable_colors = self.log_settings.enable_colors
         else:
             raise ValueError("No logger settings provided")
+        self.log(f"Logger initialized with settings: {settings}", "debug")
 
     def __del__(self):
         if self.file_session:
@@ -177,9 +184,10 @@ class KiranLogger:
             True if the log type should be logged, False otherwise.
         """
         map_of_logging = {
+            "no-error": [],
             "basic": ["info", "warning"],
+            "standard": ["info", "warning", "error"],
             "debug": ["info", "warning", "debug", "error"],
-            "no-error": ["info", "warning", "debug", "error"],
         }
         set_level = typing.cast(LoggingLevel, self.log_settings.level)
         pick_theme = map_of_logging.get(set_level)
@@ -212,10 +220,13 @@ class KiranLogger:
         log_type : LoggingType
             The log type to be used
         """
-        if self.clean_logs:
-            self._clean_log(message, log_type)
+        if self._check_to_log(log_type):
+            if self.clean_logs:
+                self._clean_log(message, log_type)
+            else:
+                print(self._add_color(message, log_type))
         else:
-            print(self._add_color(message, log_type))
+            pass
 
     def clear_logs(self) -> None:
         """

@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import msgspec
 import typing
-import aiohttp
+
+"""import aiohttp
 import pathlib
-import urllib
+import urllib"""
 
 
 class KiranResource(msgspec.Struct):
