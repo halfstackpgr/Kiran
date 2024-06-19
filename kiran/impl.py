@@ -1,24 +1,11 @@
 import typing
+import datetime
+import asyncio
+import pathlib
 
+from .core.events import KiranEvent
+from .core.cache import KiranCache
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
-from .core.commands import CommandOption
-class KiranContext:
-    def __init__(
-        self, 
-        command_name: str, 
-        command_description: str,
-        callback: typing.Callable[..., typing.Any],
-        options: typing.Sequence[CommandOption]
-        ) -> None:
-        self.command_name = command_name
-        self.command_description = command_description
-        self.callback = callback
-        self.options = options
-        
-        pass
-
-    def __repr__(self) -> str:
-        return f"{self.command_name}: {self.command_description}"
 
 
 LoadProxy = typing.Union[typing.List[typing.Mapping[str, str]], typing.Mapping[str, str]]
@@ -68,6 +55,9 @@ class KiranBot:
         proxy_settings: typing.Optional[LoadProxy] = None,
     ) -> None:
         self._callbacks: typing.Dict[str, typing.Callable[..., typing.Any]] = {}
+        self._datetime_task: typing.Dict[datetime.datetime, typing.Callable[..., typing.Any]] = {}
+        self._subscribed_events: typing.List[KiranEvent] = []
+        self._cache: KiranCache = KiranCache()
         self._token = token
         self._prefix = prefix
         self.proxy_settings = proxy_settings
@@ -78,20 +68,26 @@ class KiranBot:
         self.log = self.logger.log
         self.clean_logs = self.logger.clear_logs
         self.log("Bot Client has been initialized. Would now try to pool the bot to receive events.", "debug")
+        self.event_loop = asyncio.get_event_loop()
 
-    def register(self, callback: typing.Callable[..., typing.Any]) -> typing.Callable[..., typing.Any]:
-        """
-        Register a callback function.
+    def register(self): ...
 
-        Parameters
-        ----------
-        callback : typing.Callable[..., typing.Any]
-            Callback function to be registered.
+    def listen(self): ...
 
-        Returns
-        -------
-        typing.Callable[..., typing.Any]
-            The registered callback function.
-        """
-        self._callbacks[callback.__name__] = callback
-        return callback
+    def shutdown(self) -> None:
+        self.log("The shutdown event has been dispatched.", "debug")
+        self.event_loop.close()
+        self.log("The bot has been shutdown.", "debug")
+
+    def load_plugins_from(self, path: typing.Union[str, pathlib.Path]) -> None: ...
+
+    def load_plugin(self, plugin: typing.Union[str, pathlib.Path]) -> None: ...
+
+    def unload_plugin(self, plugin: typing.Union[str, pathlib.Path]) -> None: ...
+
+    def execute(self, code: str) -> None: ...
+
+    def cache(self) -> KiranCache:
+        return self._cache
+
+    def call(self) -> None: ...
