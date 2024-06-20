@@ -33,7 +33,7 @@ debug: Only debug logging will be displayed.
     Each and everything happening in the bot would get displayed. Each connection and everything happening in the bot would get displayed. [LoggingType](kiran.logger.LoggingType) would be supported.
 no-error: 
     Only non-error logging will be displayed.
-    Meant to supress the errors the bot might encounter.
+    Meant to suppress the errors the bot might encounter.
 """
 
 

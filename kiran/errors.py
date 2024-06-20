@@ -2,7 +2,6 @@ import typing
 import asyncio
 import webbrowser
 import sys
-import aiohttp
 
 from kiran.impl import KiranBot
 
@@ -46,13 +45,12 @@ class KiranRuntimeError(KiranBaseException):
 class KiranPollingError(KiranBaseException):
     def __init__(
         self,
-        session_response: aiohttp.ClientResponse,
         message: str,
         client: typing.Optional["KiranBot"] = None,
         *args: object,
     ) -> None:
-        self.session_response = session_response
         super().__init__(message, client, *args)
+
 
 class KiranUnkownError(KiranBaseException):
     def __init__(
@@ -72,4 +70,3 @@ class KiranUnkownError(KiranBaseException):
             sys.stdout.write(
                 "\nKindly submit a report along with the traceback to https://https://github.com/halfstackpgr/kiran/issues/new\n"
             )
-

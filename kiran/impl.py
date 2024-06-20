@@ -32,10 +32,10 @@ password : str
 class KiranBot:
     """
     Kiran Bot.
-    This class helps to initialize the bot class in order for the user to consturct the bot.
+    This class helps to initialize the bot class in order for the user to construct the bot.
     You can register callbacks or functions using the decorator `register` method.
     You can start pooling the bot using `run()` method from the bot class.
-    Runtime is all dependant on this class, you can access the logger using `logger` attribute.
+    Runtime is all dependent on this class, you can access the logger using `logger` attribute.
     Or you can setup your own logger using the internal logger.
 
     Parameters
