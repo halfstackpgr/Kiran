@@ -97,7 +97,9 @@ class KiranLogger:
                 if isinstance(self.log_settings.log_file, pathlib.Path):
                     self.log_file = self.log_settings.log_file
                 else:
-                    raise ValueError("Invalid log file type. Must be str or an instance of pathlib.Path")
+                    raise ValueError(
+                        "Invalid log file type. Must be str or an instance of pathlib.Path"
+                    )
                 self.file_session = open(self.log_file, mode="a")
 
             self.clean_logs = self.log_settings.clean_logs

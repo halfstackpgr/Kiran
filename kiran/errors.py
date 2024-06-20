@@ -2,6 +2,7 @@ import typing
 import asyncio
 import webbrowser
 import sys
+import aiohttp
 
 from kiran.impl import KiranBot
 
@@ -10,7 +11,12 @@ if typing.TYPE_CHECKING:
 
 
 class KiranBaseException(Exception):
-    def __init__(self, message: str, client: typing.Optional["KiranBot"] = None, *args: object) -> None:
+    def __init__(
+        self,
+        message: str,
+        client: typing.Optional["KiranBot"] = None,
+        *args: object,
+    ) -> None:
         self.client = client
         self.message = message
         super().__init__(*args)
@@ -37,14 +43,33 @@ class KiranRuntimeError(KiranBaseException):
         super().__init__(message, client, *args)
 
 
+class KiranPollingError(KiranBaseException):
+    def __init__(
+        self,
+        session_response: aiohttp.ClientResponse,
+        message: str,
+        client: typing.Optional["KiranBot"] = None,
+        *args: object,
+    ) -> None:
+        self.session_response = session_response
+        super().__init__(message, client, *args)
+
 class KiranUnkownError(KiranBaseException):
-    def __init__(self, message: str, client: typing.Optional["KiranBot"] = None, *args: object) -> None:
+    def __init__(
+        self,
+        message: str,
+        client: typing.Optional["KiranBot"] = None,
+        *args: object,
+    ) -> None:
         super().__init__(message, client, *args)
 
     def bug_drop(self) -> None:
         try:
-            webbrowser.open_new_tab("https://github.com/halfstackpgr/kiran/issues/new")
+            webbrowser.open_new_tab(
+                "https://github.com/halfstackpgr/kiran/issues/new"
+            )
         except Exception:
             sys.stdout.write(
                 "\nKindly submit a report along with the traceback to https://https://github.com/halfstackpgr/kiran/issues/new\n"
             )
+

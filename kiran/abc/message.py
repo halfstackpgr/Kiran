@@ -327,7 +327,9 @@ class Message(msgspec.Struct):
     """
     Service message: the channel has been created. This field can't be received in a message coming through updates, because bot can't be a member of a channel when it is created. It can only be found in `reply_to_message` if someone replies to a very first message in a channel.
     """
-    message_auto_delete_timer_changed: typing.Optional[MessageAutoDeleteTimerChanged]
+    message_auto_delete_timer_changed: typing.Optional[
+        MessageAutoDeleteTimerChanged
+    ]
     """
     Service message: auto-delete timer settings changed in the chat.
     """
@@ -337,7 +339,9 @@ class Message(msgspec.Struct):
     """
     pinned_message: typing.Optional[typing.Union[Message, InaccessibleMessage]]
 
-    from_user: typing.Optional[typing.Union[User, MyUser]] = msgspec.field(name="from", default=None)
+    from_user: typing.Optional[typing.Union[User, MyUser]] = msgspec.field(
+        name="from", default=None
+    )
     """
     Sender of the message; empty for messages sent to channels. For backward compatibility, the field contains a fake sender user in non-channel chats, if the message was sent on behalf of a chat.
     """

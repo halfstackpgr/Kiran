@@ -22,5 +22,7 @@ class CommandOption:
 
 
 class KiranCommmand:
-    def __init__(self, name: str, description: str, options: typing.List[CommandOption]) -> None:
+    def __init__(
+        self, name: str, description: str, options: typing.List[CommandOption]
+    ) -> None:
         pass

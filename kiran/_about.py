@@ -10,7 +10,9 @@ from colorama import Fore
 __author__: typing.Final = "Parth Mishra"
 __email__: typing.Final = "halfstackpgr@gmail.com"
 __version__: typing.Final = "0.0.1"
-__description__: typing.Final = "A raged framework for wrapping up your telegram bot."
+__description__: typing.Final = (
+    "A raged framework for wrapping up your telegram bot."
+)
 __banner__: typing.Final = rf"""{Fore.LIGHTRED_EX} __   ___   __      _______        __      _____  ___   
 |/"| /  ") |" \    /"      \      /""\    (\"   \|"  \  
 (: |/   /  ||  |  |:        |    /    \   |.\\   \    | {Fore.RESET}

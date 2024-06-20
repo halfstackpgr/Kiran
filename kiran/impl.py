@@ -2,13 +2,16 @@ import typing
 import datetime
 import asyncio
 import pathlib
+import aiohttp
 
 from .core.events import KiranEvent
 from .core.cache import KiranCache
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
+from .core.methods import TelegramMethodName
 
-
-LoadProxy = typing.Union[typing.List[typing.Mapping[str, str]], typing.Mapping[str, str]]
+LoadProxy = typing.Union[
+    typing.List[typing.Mapping[str, str]], typing.Mapping[str, str]
+]
 """
 LoadProxy is a type that specifies the proxy for the bot. It can be used in two ways:
 The proxy settings can be accessed using the configuration module in Kiran.
@@ -55,7 +58,9 @@ class KiranBot:
         proxy_settings: typing.Optional[LoadProxy] = None,
     ) -> None:
         self._callbacks: typing.Dict[str, typing.Callable[..., typing.Any]] = {}
-        self._datetime_task: typing.Dict[datetime.datetime, typing.Callable[..., typing.Any]] = {}
+        self._datetime_task: typing.Dict[
+            datetime.datetime, typing.Callable[..., typing.Any]
+        ] = {}
         self._subscribed_events: typing.List[KiranEvent] = []
         self._cache: KiranCache = KiranCache()
         self._token = token
@@ -67,8 +72,21 @@ class KiranBot:
         self.logging_settings = logging_settings
         self.log = self.logger.log
         self.clean_logs = self.logger.clear_logs
-        self.log("Bot Client has been initialized. Would now try to pool the bot to receive events.", "debug")
+        self.log(
+            "Bot Client has been initialized. Would now try to pool the bot to receive events.",
+            "debug",
+        )
         self.event_loop = asyncio.get_event_loop()
+
+    async def get_url_session(self, method: TelegramMethodName):
+        """
+        Get a url session to make request to a web-url.
+        """
+        async with aiohttp.ClientSession(
+            base_url="https://api.telegram.org"
+        ) as session:
+            ls = await session.get(f"/bot{self._token}/{method}")
+            print(await ls.read())
 
     def register(self): ...
 
@@ -79,11 +97,15 @@ class KiranBot:
         self.event_loop.close()
         self.log("The bot has been shutdown.", "debug")
 
-    def load_plugins_from(self, path: typing.Union[str, pathlib.Path]) -> None: ...
+    def load_plugins_from(
+        self, path: typing.Union[str, pathlib.Path]
+    ) -> None: ...
 
     def load_plugin(self, plugin: typing.Union[str, pathlib.Path]) -> None: ...
 
-    def unload_plugin(self, plugin: typing.Union[str, pathlib.Path]) -> None: ...
+    def unload_plugin(
+        self, plugin: typing.Union[str, pathlib.Path]
+    ) -> None: ...
 
     def execute(self, code: str) -> None: ...
 

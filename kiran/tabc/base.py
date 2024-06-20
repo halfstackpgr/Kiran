@@ -42,7 +42,9 @@ class KiranResource(msgspec.Struct):
     A relative path to the file.
     """
 
-    def __init__(self, *args: tuple[str, ...], **kwargs: typing.Dict[str, typing.Any]):
+    def __init__(
+        self, *args: tuple[str, ...], **kwargs: typing.Dict[str, typing.Any]
+    ):
         super().__init__(*args, **kwargs)
 
 
