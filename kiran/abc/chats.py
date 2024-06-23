@@ -7,6 +7,7 @@ from .misc import (
     BusinessLocation,
     BusinessOpeningHours,
 )
+from .interactions import Location
 from .reactions import ReactionTypeCustomEmoji, ReactionTypeEmoji
 from ..core.enums import ChatType
 
@@ -165,3 +166,18 @@ class ChatFullInfo(Chat):
     Primary invite link, for groups, supergroups and channel chats
     """
     pinned_message: typing.Optional[Message]
+
+
+class ChatLocation(msgspec.Struct):
+    """
+    This object represents a location to which a chat is connected.
+    """
+
+    location: typing.Optional[Location]
+    """
+    The location to which the supergroup is connected. Can't be a live location.
+    """
+    address: typing.Optional[str]
+    """
+    Location address; 1-64 characters, as defined by the chat owner
+    """

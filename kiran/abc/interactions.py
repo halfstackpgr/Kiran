@@ -3,8 +3,9 @@ import msgspec
 
 
 from .media import PhotoSize, Animation
-from .messages import MessageEntity
-
+from .messages import MessageEntity, Message
+from .chats import Chat
+from .users import User
 from ..core.enums import PollType
 
 
@@ -229,4 +230,112 @@ class MessageAutoDeleteTimerChanged(msgspec.Struct):
     message_auto_delete_time: int
     """
     New auto-delete time for messages in the chat
+    """
+
+
+class Giveaway(msgspec.Struct):
+    """
+    This object represents a service message about the creation of a scheduled giveaway.
+    Currently holds no information.
+    """
+
+    chats: typing.List[Chat]
+    """
+    The list of chats which the user must join to participate in the giveaway
+    """
+    winner_selection_date: int
+    """
+    The date when the giveaway ends. Unix time.
+    """
+    winner_count: int
+    """
+    Number of winners
+    """
+    only_new_members: typing.Optional[bool]
+    """
+    True, if only users who join the chats after the giveaway started should be eligible to win.
+    """
+    has_public_winners: bool
+    """
+    True, if the list of giveaway winners will be visible to everyone.
+    """
+    prize_description: typing.Optional[str]
+    """
+    Description of additional giveaway prize
+    """
+    country_codes: typing.Optional[typing.List[str]]
+    """
+    List of 2-letter ISO 3166-1 alpha-2 country codes. Currently, only one country can be specified.
+    """
+    premium_subscription_month_count: typing.Optional[int]
+    """
+    The number of months the Telegram Premium subscription won from the giveaway will be active for.
+    """
+
+
+class GiveawayWinners(msgspec.Struct):
+    """
+    Represents a message about the completion of a giveaway with public winners.
+    """
+
+    chat: Chat
+    """
+    The chat that created the giveaway.
+    """
+    giveaway_message_id: int
+    """
+    Identifier of the message with the giveaway in the chat.
+    """
+    winners_selection_date: int
+    """
+    The date when the giveaway winners were selected. Unix time.
+    """
+    winner_count: int
+    """
+    Number of winners
+    """
+    winners: typing.List[User]
+    """
+    List of up to 100 winners of the giveaway
+    """
+    additional_chat_count: typing.Optional[int]
+    """
+    Number of chats in which the giveaway was created
+    """
+    premium_subscription_month_count: typing.Optional[int]
+    """
+    The number of months the Telegram Premium subscription won from the giveaway will be active for.
+    """
+    unclaimed_prize_count: typing.Optional[int]
+    """
+    Number of undistributed prizes
+    """
+    only_new_members: typing.Optional[bool]
+    """
+    True, if only users who had joined the chats after the giveaway started were eligible to win.
+    """
+    was_refunded: typing.Optional[bool]
+    """
+    True, if the giveaway was refunded.
+    """
+    prize_description: typing.Optional[str]
+    """
+    Description of additional giveaway prize
+    """
+
+
+class GiveawayCompleted(msgspec.Struct):
+    """ """
+
+    winner_count: int
+    """
+    Number of winners
+    """
+    unclaimed_prize_count: int
+    """
+    Number of unclaimed prizes
+    """
+    giveaway_message: typing.Optional[Message]
+    """
+    Message associated with the giveaway if not deleted.
     """
