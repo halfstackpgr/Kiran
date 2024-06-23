@@ -1,16 +1,20 @@
-from __future__ import annotations
-
 import msgspec
 import typing
 
-from .user import User, MyUser
 from .chats import Chat
-from .base import BaseMessageOrigin
-from .subtype import (
-    LinkPreviewOptions,
-    TextQuote,
+from .users import User
+from .misc import LinkPreviewOptions
+from .interactions import (
+    Contact,
+    Dice,
+    Game,
+    Poll,
+    Venue,
+    Location,
+    MessageAutoDeleteTimerChanged,
+)
+from .media import (
     Story,
-    MessageEntity,
     Animation,
     Audio,
     Document,
@@ -19,15 +23,24 @@ from .subtype import (
     Video,
     VideoNote,
     Voice,
-    Contact,
-    Dice,
-    Game,
-    Poll,
-    Venue,
-    Location,
-    MessageAutoDeleteTimerChanged,
-    InaccessibleMessage,
 )
+from ..core.enums import MessageOriginType, MessageEntityType
+
+
+class BaseMessageOrigin(msgspec.Struct):
+    """
+    This object represents a message origin.
+    """
+
+    type: MessageOriginType
+    """
+    Origin type.
+    """
+
+    date: int
+    """
+    Date the message was sent originally in Unix time.
+    """
 
 
 class MessageOriginUser(BaseMessageOrigin):
@@ -35,7 +48,7 @@ class MessageOriginUser(BaseMessageOrigin):
     The message was originally sent by a known user.
     """
 
-    sender_user: typing.Union[User, MyUser]
+    sender_user: User
     """
     User that sent the message originally.
     """
@@ -111,6 +124,77 @@ class ExternalReplyInfo:
     link_preview_options: typing.Optional[LinkPreviewOptions]
 
 
+class MessageEntity(msgspec.Struct):
+    """
+    This object represents one special entity in a text message. For example, hashtags, usernames, URLs, etc.
+    """
+
+    type: MessageEntityType
+    """
+    The entity type
+    """
+    offset: int
+    """
+    Offset in [UTF-16 code units](https://core.telegram.org/api/entities#entity-length) to the start of the entity
+    """
+    length: int
+    """
+    Length of the entity in [UTF-16 code units](https://core.telegram.org/api/entities#entity-length)
+    """
+    url: typing.Optional[str]
+    """
+    Optional. For `text_link` only, URL that will be opened after user taps on the text
+    """
+    user: typing.Optional[User]
+    """
+    For “text_mention” only, the mentioned user
+    """
+    language: typing.Optional[str]
+    """
+    For “pre” only, the programming language of the entity
+    """
+    custom_emoji_id: typing.Optional[str]
+    """
+    For `custom_emoji` only, unique identifier of the custom emoji.
+    """
+
+
+class TextQuote(msgspec.Struct):
+    text: str
+    """
+    Text of the quoted part of a message that is replied to by the given message.
+    """
+    entities: typing.Optional[typing.List[MessageEntity]]
+    """ Special entities that appear in the quote. Currently, only bold, italic, underline, strikethrough, spoiler, and custom_emoji entities are kept in quotes. """
+    position: int
+    """
+    Approximate quote position in the original message in UTF-16 code units as specified by the sender
+    """
+    is_manual: bool
+    """
+    True, if the quote was chosen manually by the message sender. Otherwise, the quote was added automatically by the server.
+    """
+
+
+class InaccessibleMessage(msgspec.Struct):
+    """
+    This object describes a message that was deleted or is otherwise inaccessible to the bot.
+    """
+
+    chat: Chat
+    """
+    Chat the message was belonged to.
+    """
+    message_id: int
+    """
+    Unique message identifier
+    """
+    date: int
+    """
+    Always 0. The field can be used to differentiate regular and inaccessible messages.
+    """
+
+
 class Message(msgspec.Struct):
     """
     A telegram message.
@@ -132,7 +216,7 @@ class Message(msgspec.Struct):
     """
     If the sender of the message boosted the chat, the number of boosts added by the user.
     """
-    sender_business_bot: typing.Optional[typing.Union[User, MyUser]]
+    sender_business_bot: typing.Optional[User]
     """
     The bot that actually sent the message on behalf of the business account. Available only for outgoing messages sent on behalf of the connected business account.
     """
@@ -163,7 +247,7 @@ class Message(msgspec.Struct):
     """
     True, if the message is a channel post that was automatically forwarded to the connected discussion group.
     """
-    reply_to_message: typing.Optional[Message]
+    reply_to_message: typing.Optional["Message"]
     """
     For replies in the same chat and message thread, the original message. Note that the Message object in this field will not contain further reply_to_message fields even if it itself is a reply.
     """
@@ -179,7 +263,7 @@ class Message(msgspec.Struct):
     """
     For replies to a story, the original story.
     """
-    via_bot: typing.Optional[typing.Union[User, MyUser]]
+    via_bot: typing.Optional[User]
     """
     Bot through which the message was sent.
     """
@@ -295,11 +379,11 @@ class Message(msgspec.Struct):
     """
     Message is a shared location, information about the location
     """
-    new_chat_members: typing.Optional[typing.List[typing.Union[User, MyUser]]]
+    new_chat_members: typing.Optional[typing.List[User]]
     """
     New members that were added to the group or supergroup and information about them (the bot itself may be one of these members)
     """
-    left_chat_member: typing.Optional[typing.Union[User, MyUser]]
+    left_chat_member: typing.Optional[User]
     """
     A member was removed from the group, information about them (this member may be the bot itself)
     """
@@ -337,11 +421,11 @@ class Message(msgspec.Struct):
     """
     The supergroup has been migrated from a group with the specified identifier. 
     """
-    pinned_message: typing.Optional[typing.Union[Message, InaccessibleMessage]]
+    pinned_message: typing.Optional[
+        typing.Union["Message", InaccessibleMessage]
+    ]
 
-    from_user: typing.Optional[typing.Union[User, MyUser]] = msgspec.field(
-        name="from", default=None
-    )
+    from_user: typing.Optional[User] = msgspec.field(name="from", default=None)
     """
     Sender of the message; empty for messages sent to channels. For backward compatibility, the field contains a fake sender user in non-channel chats, if the message was sent on behalf of a chat.
     """

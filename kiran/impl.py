@@ -1,13 +1,17 @@
 import typing
 import datetime
 import asyncio
-import pathlib
-import aiohttp
 
-from .core.events import KiranEvent
-from .core.cache import KiranCache
+
+from .core.poll import PollingManager
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
-from .core.methods import TelegramMethodName
+from .core.cache import KiranCache
+from .components.context import CommandContext
+
+
+if typing.TYPE_CHECKING:
+    from .core.events import KiranEvent
+
 
 LoadProxy = typing.Union[
     typing.List[typing.Mapping[str, str]], typing.Mapping[str, str]
@@ -54,17 +58,10 @@ class KiranBot:
         self,
         token: str,
         prefix: typing.Optional[typing.Union[str, typing.List[str]]] = "/",
-        logging_settings: typing.Optional[LoggerSettings] = None,
+        logging_settings: typing.Optional["LoggerSettings"] = None,
         proxy_settings: typing.Optional[LoadProxy] = None,
+        polling_manager: typing.Optional["PollingManager"] = None,
     ) -> None:
-        self._callbacks: typing.Dict[str, typing.Callable[..., typing.Any]] = {}
-        self._datetime_task: typing.Dict[
-            datetime.datetime, typing.Callable[..., typing.Any]
-        ] = {}
-        self._subscribed_events: typing.List[KiranEvent] = []
-        self._cache: KiranCache = KiranCache()
-        self._token = token
-        self._prefix = prefix
         self.proxy_settings = proxy_settings
         self.logger = KiranLogger(DefaultSettings)
         if logging_settings:
@@ -72,44 +69,69 @@ class KiranBot:
         self.logging_settings = logging_settings
         self.log = self.logger.log
         self.clean_logs = self.logger.clear_logs
+        self._subscribed_events: typing.Dict[
+            typing.Type["KiranEvent"],
+            typing.List[
+                typing.Callable[["KiranEvent"], typing.Awaitable[None]]
+            ],
+        ] = {}
+        if polling_manager is None:
+            polling_manager = PollingManager(token, self, 100)
+        self._commands: typing.Dict[
+            str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
+        ] = {}
+        self.polling_manager = polling_manager
+        self._datetime_task: typing.Dict[
+            datetime.datetime, typing.Callable[..., typing.Any]
+        ] = {}
+        self._cache: KiranCache = KiranCache()
+        self._token = token
+        self._prefix = prefix
         self.log(
             "Bot Client has been initialized. Would now try to pool the bot to receive events.",
             "debug",
         )
         self.event_loop = asyncio.get_event_loop()
 
-    async def get_url_session(self, method: TelegramMethodName):
-        """
-        Get a url session to make request to a web-url.
-        """
-        async with aiohttp.ClientSession(
-            base_url="https://api.telegram.org"
-        ) as session:
-            ls = await session.get(f"/bot{self._token}/{method}")
-            print(await ls.read())
+    def command(
+        self, name: str
+    ) -> typing.Callable[
+        [typing.Callable[["CommandContext"], typing.Awaitable[None]]],
+        typing.Callable[["CommandContext"], typing.Awaitable[None]],
+    ]:
+        def decorator(
+            func: typing.Callable[[CommandContext], typing.Awaitable[None]],
+        ) -> typing.Callable[[CommandContext], typing.Awaitable[None]]:
+            self._commands[name] = func
+            return func
 
-    def register(self): ...
+        return decorator
 
-    def listen(self): ...
+    async def _poll(self) -> ...:
+        await self.polling_manager.poll()
+
+    async def _main_frame(self) -> None:
+        await self.event_loop.run_until_complete(await self._poll())
+
+    def listen(self, event_type: typing.Type["KiranEvent"]):
+        def decorator(
+            func: typing.Callable[[KiranEvent], typing.Awaitable[None]],
+        ):
+            if event_type not in self._subscribed_events:
+                self._subscribed_events[event_type] = []
+            self._subscribed_events[event_type].append(func)
+            return func
+
+        return decorator
+
+    async def dispatch(self, event: "KiranEvent") -> None:
+        for handler in self._subscribed_events.get(type(event), []):
+            await handler(event)
 
     def shutdown(self) -> None:
         self.log("The shutdown event has been dispatched.", "debug")
         self.event_loop.close()
         self.log("The bot has been shutdown.", "debug")
 
-    def load_plugins_from(
-        self, path: typing.Union[str, pathlib.Path]
-    ) -> None: ...
-
-    def load_plugin(self, plugin: typing.Union[str, pathlib.Path]) -> None: ...
-
-    def unload_plugin(
-        self, plugin: typing.Union[str, pathlib.Path]
-    ) -> None: ...
-
-    def execute(self, code: str) -> None: ...
-
-    def cache(self) -> KiranCache:
-        return self._cache
-
-    def call(self) -> None: ...
+    def run(self) -> None:
+        asyncio.run(main=self._main_frame())

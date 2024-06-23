@@ -1,24 +1,52 @@
-from __future__ import annotations
-
 import typing
-from .base import BaseChat
-from .subtype import (
-    ChatPhoto,
+import msgspec
+from .messages import Message
+from .misc import (
     BirthDate,
     BusinessIntro,
     BusinessLocation,
     BusinessOpeningHours,
-    ReactionTypeCustomEmoji,
-    ReactionTypeEmoji,
 )
-from .message import Message
+from .reactions import ReactionTypeCustomEmoji, ReactionTypeEmoji
+from ..core.enums import ChatType
 
 
-class Chat(BaseChat):
+class ChatPhoto(msgspec.Struct):
+    """
+    A class representing the chat photo.
+    """
+
+    small_file_id: str
+    """
+    File identifier of small `(160x160)` chat photo. This file_id can be used only for photo download and only for as long as the photo is not changed.
+    """
+    small_file_unique_id: str
+    """
+    Unique file identifier of small `(160x160)` chat photo, which is supposed to be the same over time and for different bots. Can't be used to download or reuse the file.
+    """
+    big_file_id: str
+    """
+    File identifier of big `(640x640)` chat photo. This file_id can be used only for photo download and only for as long as the photo is not changed.
+    """
+    big_file_unique_id: str
+    """
+    Unique file identifier of big `(640x640)` chat photo, which is supposed to be the same over time and for different bots. Can't be used to download or reuse the file.
+    """
+
+
+class Chat(msgspec.Struct):
     """
     A instance representing a chat.
     """
 
+    id: int
+    """
+    Unique identifier for this chat.
+    """
+    type: ChatType
+    """
+    Type of chat, can be either 'private', 'group', 'supergroup' or 'channel'.
+    """
     title: typing.Optional[str]
     """
     Title, for supergroups, channels and group chats
@@ -41,7 +69,7 @@ class Chat(BaseChat):
     """
 
 
-class ChatInfo(Chat):
+class ChatFullInfo(Chat):
     """
     A instance representing a grouped information of a chat.
     """

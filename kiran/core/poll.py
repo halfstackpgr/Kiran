@@ -3,10 +3,9 @@ import typing
 import datetime
 import asyncio
 
-from ..errors import KiranPollingError
-
 if typing.TYPE_CHECKING:
     from ..impl import KiranBot
+    from ..errors import KiranPollingError
 
 
 class PollingManager:
@@ -70,13 +69,11 @@ class PollingManager:
                 response = await self._make_request()
                 if response and response.status == 200:
                     updates = await response.json()
+                    self.client.log(f"Updates: {updates}", "debug")
                     if updates["result"]:
                         for update in updates["result"]:
-                            print(update)
                             self.last_event_id = update["update_id"]
-                await asyncio.sleep(
-                    1
-                )  # Small delay to prevent flooding the Telegram servers
+                await asyncio.sleep(1)
             except Exception as e:
                 self.client.log(f"Error in polling updates: {str(e)}", "error")
-                await asyncio.sleep(5)  # Wait before retrying on error
+                await asyncio.sleep(5)
