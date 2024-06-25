@@ -1,5 +1,11 @@
 import typing
+import aiohttp
+import msgspec
 import dataclasses
+
+from ..errors import KiranPollingError
+from ..abc.bots import BotCommand, BotCommandScope, BotCommandScopeDefault
+from ..components.commands import LanguageCode
 
 if typing.TYPE_CHECKING:
     from ..impl import KiranBot
@@ -113,7 +119,57 @@ class TelegramMethodName:
         return f"{self.__match_args__}"
 
 
+
 class KiranCaller:
-    def __init__(self, bot: "KiranBot") -> None:
+    def __init__(self, bot: "KiranBot", token: str) -> None:
         self.client = bot
+        self.session = aiohttp.ClientSession()
+        self.token = token
         pass
+
+    async def _make_request(
+        self, method: typing.Union[str, TelegramMethodName], parms: typing.Dict[str, typing.Any]
+    ) -> typing.Optional[aiohttp.ClientResponse]:
+        try:
+            async with aiohttp.ClientSession() as session:
+                response = await session.get(
+                    f"https://api.telegram.org/bot{self.token}/{method}",
+                    params=parms,
+                )
+                self.client.log(
+                    f"Caller Response:\n{await response.text()}", "debug"
+                )
+                return response
+        except aiohttp.ClientError as e:
+            self.client.log(
+                "Error trying to connect to the Telegram server.", "warning"
+            )
+            self.client.log(str(e), "debug")
+            raise KiranPollingError(
+                message="Error in trying to call the Telegram server.",
+                client=self.client,
+            )
+
+    async def set_commands(
+        self,
+        bot_commands: typing.Union[typing.List[BotCommand], BotCommand],
+        command_scope: typing.Optional[BotCommandScope] = BotCommandScopeDefault(),
+        language_code_iso: typing.Optional[typing.Union[str, typing.Type[LanguageCode]]] = None,
+    ) -> ...:
+        encoder = msgspec.json.Encoder()
+        list_of_commands: typing.List[str] = []
+        if isinstance(bot_commands, list):
+            for command in bot_commands:
+                list_of_commands.append(encoder.encode(command).decode("utf-8"))
+        else:
+            list_of_commands.append(encoder.encode(bot_commands).decode("utf-8"))
+        
+        resp = await self._make_request(
+            method=TelegramMethodName.SET_MY_COMMANDS,
+            parms={
+                "commands": list_of_commands,
+                "scope": encoder.encode(command_scope).decode("utf-8"),
+                "language_code": language_code_iso
+            }
+            )
+        self.client.log((await resp.content.read()).decode(), "debug") #type: ignore

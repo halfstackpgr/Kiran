@@ -50,7 +50,7 @@ class PollingManager:
                     },
                 )
                 self.client.log(
-                    f"Response of polling:\n{await response.text()}", "debug"
+                    f"Polling Response:\n{await response.text()}", "debug"
                 )
                 return response
         except aiohttp.ClientError as e:
@@ -69,7 +69,6 @@ class PollingManager:
                 response = await self._make_request()
                 if response and response.status == 200:
                     updates = await response.json()
-                    self.client.log(f"Updates: {updates}", "debug")
                     if updates["result"]:
                         for update in updates["result"]:
                             self.last_event_id = update["update_id"]

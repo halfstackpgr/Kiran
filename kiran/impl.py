@@ -7,6 +7,7 @@ from .core.poll import PollingManager
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
 from .core.cache import KiranCache
 from .components.context import CommandContext
+from .abc.bots import BotCommandScope, BotCommandScopeDefault
 
 
 if typing.TYPE_CHECKING:
@@ -94,7 +95,10 @@ class KiranBot:
         self.event_loop = asyncio.get_event_loop()
 
     def command(
-        self, name: str
+        self,
+        name: str,
+        description: str,
+        scopes: typing.Optional[BotCommandScope] = BotCommandScopeDefault(),
     ) -> typing.Callable[
         [typing.Callable[["CommandContext"], typing.Awaitable[None]]],
         typing.Callable[["CommandContext"], typing.Awaitable[None]],
