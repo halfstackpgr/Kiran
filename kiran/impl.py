@@ -89,13 +89,16 @@ class KiranBot:
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
         self._slash_commands: typing.Dict[
-            str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
+            CallableBotCommandDetails,
+            typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
         self._prefix_commands: typing.Dict[
-            str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
+            CallableBotCommandDetails,
+            typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
         self._common_commands: typing.Dict[
-            str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
+            CallableBotCommandDetails,
+            typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
         self.polling_manager = polling_manager
         self._datetime_task: typing.Dict[
@@ -124,15 +127,47 @@ class KiranBot:
             func: typing.Callable[[CommandContext], typing.Awaitable[None]],
         ) -> typing.Callable[[CommandContext], typing.Awaitable[None]]:
             if hasattr(func, "__implements__"):
-                self._commands[
-                    CallableBotCommandDetails(
-                        name=name,
-                        description=description,
-                        scope=scopes,
-                        language_code=language_code,
+                if func.__implements__ == CommandImplements.GENERAL_COMMAND:  # type: ignore
+                    self.log(
+                        f"Command: {name} has been registered as a common command.",
+                        "debug",
                     )
-                ] = func
+                    self._common_commands[
+                        CallableBotCommandDetails(
+                            name=name,
+                            description=description,
+                            scope=scopes,
+                            language_code=language_code,
+                        )
+                    ] = func
+                if func.__implements__ == CommandImplements.SLASH_COMMAND:  # type: ignore
+                    self.log(
+                        f"Command: {name} has been registered as a slash command.",
+                        "debug",
+                    )
+                    self._slash_commands[
+                        CallableBotCommandDetails(
+                            name=name,
+                            description=description,
+                            scope=scopes,
+                            language_code=language_code,
+                        )
+                    ] = func
+                if func.__implements__ == CommandImplements.PREFIX_COMMAND:  # type: ignore
+                    self.log(
+                        f"Command: {name} has been registered as a prefix command.",
+                        "debug",
+                    )
+                    self._prefix_commands[
+                        CallableBotCommandDetails(
+                            name=name,
+                            description=description,
+                            scope=scopes,
+                            language_code=language_code,
+                        )
+                    ] = func
             else:
+                print("HERE")
                 raise CommandImplementationError(
                     message=f"Implementation method not specified. Command: {name}",
                     client=self,
@@ -143,13 +178,14 @@ class KiranBot:
 
     async def _poll(self) -> ...:
         await self.polling_manager.poll()
-
+    async def _register_slash_commands(self) -> None:
+        ...
     async def _main_frame(self) -> None:
-        await self.event_loop.run_until_complete(await self._poll())
-        self.log("Polling has been started.", "info")
-        for command in self._commands:
-            self.log(f"Command {command.name} has been registered.", "debug")
-        self.log("All commands have been registered.", "debug")
+        try:
+            await self.event_loop.run_until_complete(await self._poll())
+        except KeyboardInterrupt:
+            self.log("The bot has been interrupted.", "debug")
+            self.shutdown()
 
     def listen(
         self, event_type: typing.Type["KiranEvent"]
@@ -177,7 +213,11 @@ class KiranBot:
         self.log("The bot has been shutdown.", "debug")
 
     def run(self) -> None:
-        asyncio.run(main=self._main_frame())
+        try:
+            asyncio.run(main=self._main_frame())
+        except KeyboardInterrupt:
+            self.log("The bot has been interrupted.", "info")
+            self.shutdown()
 
 
 def implements(
