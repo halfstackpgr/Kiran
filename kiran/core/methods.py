@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import typing
 import aiohttp
 import msgspec
+import asyncio
 import dataclasses
 
 from ..errors import KiranPollingError
@@ -119,27 +122,33 @@ class TelegramMethodName:
         return f"{self.__match_args__}"
 
 
-
 class KiranCaller:
     def __init__(self, bot: "KiranBot", token: str) -> None:
         self.client = bot
-        self.session = aiohttp.ClientSession()
         self.token = token
-        pass
 
     async def _make_request(
-        self, method: typing.Union[str, TelegramMethodName], parms: typing.Dict[str, typing.Any]
+        self,
+        method: typing.Union[str, TelegramMethodName],
+        params: typing.Dict[str, typing.Any],
     ) -> typing.Optional[aiohttp.ClientResponse]:
         try:
+            url = f"https://api.telegram.org/bot{self.token}/{method}"
             async with aiohttp.ClientSession() as session:
-                response = await session.get(
-                    f"https://api.telegram.org/bot{self.token}/{method}",
-                    params=parms,
-                )
-                self.client.log(
-                    f"Caller Response:\n{await response.text()}", "debug"
-                )
+                async with session.get(url, params=params) as response:
+                    self.client.log(
+                        f"Caller Response:\n{await response.text()}", "debug"
+                    )
                 return response
+        except asyncio.TimeoutError as e:
+            str(e)
+            self.client.log(
+                "Timeout error occurred while making the request.", "warning"
+            )
+            raise KiranPollingError(
+                message="Timeout error occurred while making the request.",
+                client=self.client,
+            )
         except aiohttp.ClientError as e:
             self.client.log(
                 "Error trying to connect to the Telegram server.", "warning"
@@ -153,23 +162,32 @@ class KiranCaller:
     async def set_commands(
         self,
         bot_commands: typing.Union[typing.List[BotCommand], BotCommand],
-        command_scope: typing.Optional[BotCommandScope] = BotCommandScopeDefault(),
-        language_code_iso: typing.Optional[typing.Union[str, typing.Type[LanguageCode]]] = None,
-    ) -> ...:
+        command_scope: typing.Optional[
+            BotCommandScope
+        ] = BotCommandScopeDefault(),
+        language_code_iso: typing.Optional[
+            typing.Union[str, typing.Type[LanguageCode]]
+        ] = None,
+    ) -> None:
         encoder = msgspec.json.Encoder()
-        list_of_commands: typing.List[str] = []
-        if isinstance(bot_commands, list):
-            for command in bot_commands:
-                list_of_commands.append(encoder.encode(command).decode("utf-8"))
-        else:
-            list_of_commands.append(encoder.encode(bot_commands).decode("utf-8"))
-        
+        list_of_commands = encoder.encode(bot_commands).decode("utf-8")
+        print(list_of_commands)
+        scope_encoded = encoder.encode(command_scope).decode("utf-8")
+        language_code_encoded = (
+            encoder.encode(language_code_iso).decode("utf-8")
+            if language_code_iso
+            else None
+        )
+
+        params = {
+            "commands": list_of_commands,
+            "scope": scope_encoded,
+        }
+        if language_code_encoded is not None:
+            params["language_code"] = language_code_encoded
+
         resp = await self._make_request(
             method=TelegramMethodName.SET_MY_COMMANDS,
-            parms={
-                "commands": list_of_commands,
-                "scope": encoder.encode(command_scope).decode("utf-8"),
-                "language_code": language_code_iso
-            }
-            )
-        self.client.log((await resp.content.read()).decode(), "debug") #type: ignore
+            params=params,
+        )
+        self.client.log((await resp.content.read()).decode(), "debug")  # type: ignore

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import typing
 import datetime
 
-from kiran.core.methods import KiranCaller
 
 if typing.TYPE_CHECKING:
     from kiran.impl import KiranBot
+    from kiran.core.methods import KiranCaller
 
 
 if typing.TYPE_CHECKING:
@@ -15,7 +17,7 @@ if typing.TYPE_CHECKING:
 class KiranContext:
     def __init__(
         self,
-        caller: KiranCaller,
+        caller: "KiranCaller",
         client: "KiranBot",
         callback: typing.Callable[..., typing.Any],
         context_time: datetime.datetime,
@@ -24,6 +26,7 @@ class KiranContext:
         self.client = client
         self.callback = callback
         self.context_time = context_time
+        self.__implements__ = None
         pass
 
 
@@ -36,7 +39,7 @@ class CommandContext(KiranContext):
         message_id: int,
         chat_id: int,
         invoking_message: str,
-        caller: KiranCaller,
+        caller: "KiranCaller",
         client: "KiranBot",
         callback: typing.Callable[..., typing.Any],
         context_time: datetime.datetime,

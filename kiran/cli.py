@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+
 from ._about import __banner__
 
 

@@ -1,4 +1,5 @@
-import typing
+from __future__ import annotations
+
 import msgspec
 
 

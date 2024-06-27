@@ -1,14 +1,20 @@
+from __future__ import annotations
+
 import typing
 import datetime
 import asyncio
 
-
+from .errors import CommandImplementationError
 from .core.poll import PollingManager
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
 from .core.cache import KiranCache
 from .components.context import CommandContext
 from .abc.bots import BotCommandScope, BotCommandScopeDefault
+from .components.commands import CallableBotCommandDetails, LanguageCode
+from .components.commands import CommandImplements
 
+CommandFunction = typing.Callable[[CommandContext], typing.Awaitable[None]]
+ImplementationMethod = typing.Union[int, CommandImplements]
 
 if typing.TYPE_CHECKING:
     from .core.events import KiranEvent
@@ -79,6 +85,16 @@ class KiranBot:
         if polling_manager is None:
             polling_manager = PollingManager(token, self, 100)
         self._commands: typing.Dict[
+            CallableBotCommandDetails,
+            typing.Callable[["CommandContext"], typing.Awaitable[None]],
+        ] = {}
+        self._slash_commands: typing.Dict[
+            str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
+        ] = {}
+        self._prefix_commands: typing.Dict[
+            str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
+        ] = {}
+        self._common_commands: typing.Dict[
             str, typing.Callable[["CommandContext"], typing.Awaitable[None]]
         ] = {}
         self.polling_manager = polling_manager
@@ -99,6 +115,7 @@ class KiranBot:
         name: str,
         description: str,
         scopes: typing.Optional[BotCommandScope] = BotCommandScopeDefault(),
+        language_code: typing.Optional[typing.Union[LanguageCode, str]] = None,
     ) -> typing.Callable[
         [typing.Callable[["CommandContext"], typing.Awaitable[None]]],
         typing.Callable[["CommandContext"], typing.Awaitable[None]],
@@ -106,7 +123,20 @@ class KiranBot:
         def decorator(
             func: typing.Callable[[CommandContext], typing.Awaitable[None]],
         ) -> typing.Callable[[CommandContext], typing.Awaitable[None]]:
-            self._commands[name] = func
+            if hasattr(func, "__implements__"):
+                self._commands[
+                    CallableBotCommandDetails(
+                        name=name,
+                        description=description,
+                        scope=scopes,
+                        language_code=language_code,
+                    )
+                ] = func
+            else:
+                raise CommandImplementationError(
+                    message=f"Implementation method not specified. Command: {name}",
+                    client=self,
+                )
             return func
 
         return decorator
@@ -116,11 +146,20 @@ class KiranBot:
 
     async def _main_frame(self) -> None:
         await self.event_loop.run_until_complete(await self._poll())
+        self.log("Polling has been started.", "info")
+        for command in self._commands:
+            self.log(f"Command {command.name} has been registered.", "debug")
+        self.log("All commands have been registered.", "debug")
 
-    def listen(self, event_type: typing.Type["KiranEvent"]):
+    def listen(
+        self, event_type: typing.Type["KiranEvent"]
+    ) -> typing.Callable[
+        [typing.Callable[["KiranEvent"], typing.Awaitable[None]]],
+        typing.Callable[["KiranEvent"], typing.Awaitable[None]],
+    ]:
         def decorator(
             func: typing.Callable[[KiranEvent], typing.Awaitable[None]],
-        ):
+        ) -> typing.Callable[[KiranEvent], typing.Awaitable[None]]:
             if event_type not in self._subscribed_events:
                 self._subscribed_events[event_type] = []
             self._subscribed_events[event_type].append(func)
@@ -139,3 +178,13 @@ class KiranBot:
 
     def run(self) -> None:
         asyncio.run(main=self._main_frame())
+
+
+def implements(
+    method: ImplementationMethod,
+) -> typing.Callable[[CommandFunction], CommandFunction]:
+    def decorator(func: CommandFunction) -> CommandFunction:
+        setattr(func, "__implements__", method)
+        return func
+
+    return decorator

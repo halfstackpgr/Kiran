@@ -1,9 +1,11 @@
+from __future__ import annotations
+
+
 import typing
 import asyncio
 import webbrowser
 import sys
 
-from kiran.impl import KiranBot
 
 if typing.TYPE_CHECKING:
     from .impl import KiranBot
@@ -70,3 +72,13 @@ class KiranUnkownError(KiranBaseException):
             sys.stdout.write(
                 "\nKindly submit a report along with the traceback to https://https://github.com/halfstackpgr/kiran/issues/new\n"
             )
+
+
+class CommandImplementationError(KiranBaseException):
+    def __init__(
+        self,
+        message: str,
+        client: typing.Optional["KiranBot"] = None,
+        *args: object,
+    ) -> None:
+        super().__init__(message, client, *args)

@@ -4,6 +4,7 @@ Information about the package.
 
 from __future__ import annotations
 
+
 import typing
 from colorama import Fore
 

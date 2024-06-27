@@ -18,7 +18,7 @@ class BotCommand(msgspec.Struct):
     description: str
 
 
-class BotCommandScopeDefault(msgspec.Struct):
+class BotCommandScopeDefault(msgspec.Struct, frozen=True):
     """
     Represents a default bot command scope.
 

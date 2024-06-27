@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 import fastenum
+import msgspec
+import typing
+from ..abc.bots import BotCommandScope, BotCommandScopeDefault
 
 
 class LanguageCode(fastenum.Enum):
@@ -144,3 +149,44 @@ class LanguageCode(fastenum.Enum):
     YORUBA = "yo"
     CHINESE = "zh"
     ZULU = "zu"
+
+
+class CallableBotCommandDetails(msgspec.Struct, frozen=True):
+    """
+    Used for storing data related to bot command.
+
+    Parameters
+    ----------
+    name: str
+        The name of the command.
+    description: typing.Optional[str]
+        The description of the command.
+    scope: typing.Optional["BotCommandScope"]
+        The scope of the command.
+    language_code: typing.Optional[typing.Union[LanguageCode, str]]
+        The language code of the command.
+    """
+
+    name: str
+    description: typing.Optional[str]
+    scope: typing.Optional["BotCommandScope"] = BotCommandScopeDefault()
+    language_code: typing.Optional[typing.Union[LanguageCode, str]] = None
+
+
+class CommandImplements(fastenum.Enum):
+    """
+    Used to specify the type of command.
+    """
+
+    SLASH_COMMAND = 0
+    """
+    The command will be registered as a slash command, which is the general way of registering commands with respect to official Telegram command methods.
+    """
+    PREFIX_COMMAND = 1
+    """
+    The command will be registered as a prefix command. This is a feature implemented in Kiran, making it an undocumented feature with respect to the official Telegram documentation.
+    """
+    GENERAL_COMMAND = 3
+    """
+    The command will be registered as both a slash command and a prefix command.
+    """
