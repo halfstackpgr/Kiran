@@ -16,7 +16,7 @@ setup(
     url="https://halfstackpgr.github.io/kiran/",
     packages=find_namespace_packages(include=["kiran*"]),
     entry_points={"console_scripts": ["kiran = kiran.cli:version"]},
-    install_requires=["aiohttp", "requests", "msgspec", "colorama"],
+    install_requires=["httpx", "requests", "msgspec", "colorama"],
     classifiers=[
         "Environment :: Console",
         "Intended Audience :: Developers",

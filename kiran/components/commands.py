@@ -168,7 +168,7 @@ class CallableBotCommandDetails(msgspec.Struct, frozen=True):
     """
 
     name: str
-    description: typing.Optional[str]
+    description: str
     scope: typing.Optional["BotCommandScope"] = BotCommandScopeDefault()
     language_code: typing.Optional[typing.Union[LanguageCode, str]] = None
 

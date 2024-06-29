@@ -3,15 +3,19 @@ from __future__ import annotations
 import typing
 import datetime
 import asyncio
+import httpx
+
 
 from .errors import CommandImplementationError
-from .core.poll import PollingManager
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
+from .abc.bots import BotCommandScope, BotCommandScopeDefault, BotCommand
+from .core.poll import PollingManager
 from .core.cache import KiranCache
-from .components.context import CommandContext
-from .abc.bots import BotCommandScope, BotCommandScopeDefault
+from .core.methods import KiranCaller
 from .components.commands import CallableBotCommandDetails, LanguageCode
 from .components.commands import CommandImplements
+from .components.context import CommandContext
+
 
 CommandFunction = typing.Callable[[CommandContext], typing.Awaitable[None]]
 ImplementationMethod = typing.Union[int, CommandImplements]
@@ -82,8 +86,11 @@ class KiranBot:
                 typing.Callable[["KiranEvent"], typing.Awaitable[None]]
             ],
         ] = {}
+        self.session = httpx.AsyncClient(
+            base_url=f"https://api.telegram.org/bot{token}", timeout=999
+        )
         if polling_manager is None:
-            polling_manager = PollingManager(token, self, 100)
+            polling_manager = PollingManager(client=self, timeout=100)
         self._commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
@@ -107,11 +114,12 @@ class KiranBot:
         self._cache: KiranCache = KiranCache()
         self._token = token
         self._prefix = prefix
+        self.caller = KiranCaller(bot=self)
         self.log(
             "Bot Client has been initialized. Would now try to pool the bot to receive events.",
             "debug",
         )
-        self.event_loop = asyncio.get_event_loop()
+        self.event_loop = asyncio.new_event_loop()
 
     def command(
         self,
@@ -167,7 +175,6 @@ class KiranBot:
                         )
                     ] = func
             else:
-                print("HERE")
                 raise CommandImplementationError(
                     message=f"Implementation method not specified. Command: {name}",
                     client=self,
@@ -178,11 +185,52 @@ class KiranBot:
 
     async def _poll(self) -> ...:
         await self.polling_manager.poll()
+
     async def _register_slash_commands(self) -> None:
-        ...
+        sorted_commands: typing.Dict[
+            typing.Union[str, LanguageCode],
+            typing.Dict[
+                BotCommandScope, typing.List[CallableBotCommandDetails]
+            ],
+        ] = {}
+        for command in self._slash_commands | self._common_commands:
+            language_code = command.language_code or "default"
+            command_scope = command.scope or BotCommandScopeDefault()
+
+            if language_code not in sorted_commands:
+                sorted_commands[language_code] = {}
+
+            if command_scope not in sorted_commands[language_code]:
+                sorted_commands[language_code][command_scope] = []
+
+            sorted_commands[language_code][command_scope].append(command)
+
+        for language_code, scopes in sorted_commands.items():
+            for scope, commands in scopes.items():
+                bot_commands = [
+                    BotCommand(
+                        command=cmd.name,
+                        description=cmd.description,
+                    )
+                    for cmd in commands
+                ]
+                if language_code == "default":
+                    await self.caller.set_commands(
+                        bot_commands=bot_commands,
+                        command_scope=scope,
+                        language_code_iso=None,
+                    )
+                else:
+                    await self.caller.set_commands(
+                        bot_commands=bot_commands,
+                        command_scope=scope,
+                        language_code_iso=language_code,
+                    )
+
     async def _main_frame(self) -> None:
         try:
-            await self.event_loop.run_until_complete(await self._poll())
+            await self.event_loop.create_task(self._register_slash_commands())
+            await self._poll()
         except KeyboardInterrupt:
             self.log("The bot has been interrupted.", "debug")
             self.shutdown()
@@ -209,12 +257,13 @@ class KiranBot:
 
     def shutdown(self) -> None:
         self.log("The shutdown event has been dispatched.", "debug")
-        self.event_loop.close()
+
         self.log("The bot has been shutdown.", "debug")
 
     def run(self) -> None:
         try:
-            asyncio.run(main=self._main_frame())
+            self.event_loop.create_task(self._main_frame())
+            self.event_loop.run_forever()
         except KeyboardInterrupt:
             self.log("The bot has been interrupted.", "info")
             self.shutdown()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-import aiohttp
+import httpx
 import msgspec
 import asyncio
 import dataclasses
@@ -123,41 +123,40 @@ class TelegramMethodName:
 
 
 class KiranCaller:
-    def __init__(self, bot: "KiranBot", token: str) -> None:
+    def __init__(self, bot: "KiranBot") -> None:
         self.client = bot
-        self.token = token
 
     async def _make_request(
         self,
         method: typing.Union[str, TelegramMethodName],
         params: typing.Dict[str, typing.Any],
-    ) -> typing.Optional[aiohttp.ClientResponse]:
-        try:
-            url = f"https://api.telegram.org/bot{self.token}/{method}"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params) as response:
-                    self.client.log(
-                        f"Caller Response:\n{await response.text()}", "debug"
-                    )
+        retry_count: int = 3,
+        retry_delay: int = 1,
+    ) -> typing.Optional[httpx.Response]:
+        for attempt in range(retry_count):
+            try:
+                response = await self.client.session.get(method, params=params)  # type: ignore
+                self.client.log(
+                    f"Caller Response:\n{response.text}",
+                    "debug",
+                )
                 return response
-        except asyncio.TimeoutError as e:
-            str(e)
-            self.client.log(
-                "Timeout error occurred while making the request.", "warning"
-            )
-            raise KiranPollingError(
-                message="Timeout error occurred while making the request.",
-                client=self.client,
-            )
-        except aiohttp.ClientError as e:
-            self.client.log(
-                "Error trying to connect to the Telegram server.", "warning"
-            )
-            self.client.log(str(e), "debug")
-            raise KiranPollingError(
-                message="Error in trying to call the Telegram server.",
-                client=self.client,
-            )
+            except (asyncio.TimeoutError, httpx.TimeoutException):
+                if attempt < retry_count - 1:
+                    self.client.log(
+                        f"Error while making request to Telegram (attempt {attempt+1}/{retry_count}). Retrying in {retry_delay} seconds.",
+                        "warning",
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    self.client.log(
+                        f"Error while making request to Telegram (attempt {attempt+1}/{retry_count}). Giving up.",
+                        "error",
+                    )
+                    raise KiranPollingError(
+                        message="Error while making request to Telegram.",
+                        client=self.client,
+                    )
 
     async def set_commands(
         self,
@@ -166,19 +165,17 @@ class KiranCaller:
             BotCommandScope
         ] = BotCommandScopeDefault(),
         language_code_iso: typing.Optional[
-            typing.Union[str, typing.Type[LanguageCode]]
+            typing.Union[str, LanguageCode]
         ] = None,
     ) -> None:
         encoder = msgspec.json.Encoder()
         list_of_commands = encoder.encode(bot_commands).decode("utf-8")
-        print(list_of_commands)
         scope_encoded = encoder.encode(command_scope).decode("utf-8")
         language_code_encoded = (
             encoder.encode(language_code_iso).decode("utf-8")
             if language_code_iso
             else None
         )
-
         params = {
             "commands": list_of_commands,
             "scope": scope_encoded,
@@ -190,4 +187,4 @@ class KiranCaller:
             method=TelegramMethodName.SET_MY_COMMANDS,
             params=params,
         )
-        self.client.log((await resp.content.read()).decode(), "debug")  # type: ignore
+        self.client.log(resp.content, "debug")  # type: ignore
