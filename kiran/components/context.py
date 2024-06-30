@@ -19,12 +19,10 @@ class KiranContext:
         self,
         caller: "KiranCaller",
         client: "KiranBot",
-        callback: typing.Callable[..., typing.Any],
         context_time: datetime.datetime,
     ) -> None:
         self.call = caller
         self.client = client
-        self.callback = callback
         self.context_time = context_time
         self.__implements__ = None
         pass
@@ -41,7 +39,6 @@ class CommandContext(KiranContext):
         invoking_message: str,
         caller: "KiranCaller",
         client: "KiranBot",
-        callback: typing.Callable[..., typing.Any],
         context_time: datetime.datetime,
     ) -> None:
         self._name = name
@@ -51,7 +48,7 @@ class CommandContext(KiranContext):
         self._message_id = message_id
         self._chat_id = chat_id
         self._invoking_message = invoking_message
-        super().__init__(caller, client, callback, context_time)
+        super().__init__(caller, client, context_time)
 
     @property
     def name(self) -> str:

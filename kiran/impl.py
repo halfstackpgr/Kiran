@@ -5,7 +5,7 @@ import datetime
 import asyncio
 import httpx
 
-
+from ._about import __banner__
 from .errors import CommandImplementationError
 from .logger import LoggerSettings, KiranLogger, DefaultSettings
 from .abc.bots import BotCommandScope, BotCommandScopeDefault, BotCommand
@@ -73,6 +73,7 @@ class KiranBot:
         proxy_settings: typing.Optional[LoadProxy] = None,
         polling_manager: typing.Optional["PollingManager"] = None,
     ) -> None:
+        print(__banner__)
         self.proxy_settings = proxy_settings
         self.logger = KiranLogger(DefaultSettings)
         if logging_settings:
@@ -90,7 +91,7 @@ class KiranBot:
             base_url=f"https://api.telegram.org/bot{token}", timeout=999
         )
         if polling_manager is None:
-            polling_manager = PollingManager(client=self, timeout=100)
+            polling_manager = PollingManager(client=self, timeout=999)
         self._commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
@@ -226,10 +227,31 @@ class KiranBot:
                         command_scope=scope,
                         language_code_iso=language_code,
                     )
+        self.log(
+            f"Populated {len(self._slash_commands)} slash commands to the bot.",
+            "info",
+        )
+        self.log(
+            f"Populated {len(self._prefix_commands)} prefix commands to the bot.",
+            "info",
+        )
+        self.log(
+            f"Populated {len(self._common_commands)} common commands to the bot.",
+            "info",
+        )
+        await self.polling_manager.add_command_list(
+            slash_commands=self._slash_commands,
+            prefix_commands=self._prefix_commands,
+            common_commands=self._common_commands,
+        )
 
     async def _main_frame(self) -> None:
         try:
+            self.log(
+                "Light spark has been made! Registering the commands.", "info"
+            )
             await self.event_loop.create_task(self._register_slash_commands())
+            self.log("All commands are sucessfully engaged.", "info")
             await self._poll()
         except KeyboardInterrupt:
             self.log("The bot has been interrupted.", "debug")
@@ -257,11 +279,13 @@ class KiranBot:
 
     def shutdown(self) -> None:
         self.log("The shutdown event has been dispatched.", "debug")
-
-        self.log("The bot has been shutdown.", "debug")
+        self.event_loop.stop()
+        self.log("The event loop has been stopped.", "debug")
+        self.log("The bot has been shutdown.", "info")
 
     def run(self) -> None:
         try:
+            self.log("Trying to make a spark with the server.", "info")
             self.event_loop.create_task(self._main_frame())
             self.event_loop.run_forever()
         except KeyboardInterrupt:

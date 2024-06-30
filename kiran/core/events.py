@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import fastenum
+import enum
 import datetime
 
 
-class EventIntents(fastenum.Enum):
+class EventIntents(enum.Enum):
     """
     Enum representing the different types of updates that a bot can receive.
 

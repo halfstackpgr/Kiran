@@ -27,7 +27,7 @@ from .media import (
     VideoNote,
     Voice,
 )
-from ..core.enums import ChatType
+from ..core.enums import ChatType, ParseMode
 from .chats import ChatPhoto
 from .files import File
 from .misc import (
@@ -729,4 +729,39 @@ class GiveawayCompleted(msgspec.Struct):
     giveaway_message: typing.Optional[Message]
     """
     Message associated with the giveaway if not deleted.
+    """
+
+
+class ReplyParameters(msgspec.Struct):
+    """
+    Contains information about the message reply.
+    """
+
+    message_id: int
+    """
+    Identifier of the message to reply to.
+    """
+    chat_id: typing.Optional[int] = None
+    """
+    Identifier of the chat to send the message to (or username of the target channel in the format @channelusername).
+    """
+    allow_sending_without_reply: typing.Optional[bool] = None
+    """
+    Pass True, if the message should be sent even if the specified replied-to message is not found.
+    """
+    quote: typing.Optional[str] = None
+    """
+    Quoted part of the message to be replied to; 0-1024 characters after entities parsing. The quote must be an exact substring of the message to be replied to, including bold, italic, underline, strikethrough, spoiler, and custom_emoji entities. The message will fail to send if the quote isn't found in the original message.
+    """
+    quote_parse_mode: typing.Optional[ParseMode] = None
+    """
+    Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
+    """
+    quote_entities: typing.Optional[typing.List[MessageEntity]] = None
+    """
+    A JSON-serialized list of special entities that appear in the replied-to message, which can be specified instead of parse_mode.
+    """
+    quote_positon: typing.Optional[int] = None
+    """
+    Position of the quote in the original message in UTF-16 code units.
     """

@@ -4,18 +4,21 @@ import typing
 import httpx
 import msgspec
 import asyncio
-import dataclasses
+import enum
+
 
 from ..errors import KiranPollingError
 from ..abc.bots import BotCommand, BotCommandScope, BotCommandScopeDefault
+from ..abc.misc import LinkPreviewOptions
+from ..abc.dependant import User, Chat, Message, MessageEntity, ReplyParameters
 from ..components.commands import LanguageCode
+from ..core.enums import ParseMode
 
 if typing.TYPE_CHECKING:
     from ..impl import KiranBot
 
 
-@dataclasses.dataclass
-class TelegramMethodName:
+class TelegramMethodName(enum.Enum):
     """
     All methods in the Bot API are case-insensitive. We support GET and POST HTTP methods. Use either [URL query string](https://en.wikipedia.org/wiki/Query_string) or application/json or application/x-www-form-urlencoded or multipart/form-data for passing parameters in Bot API requests.
     On successful call, a JSON-object containing the result will be returned.
@@ -118,18 +121,18 @@ class TelegramMethodName:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def __repr__(self) -> str:
-        return f"{self.__match_args__}"
-
 
 class KiranCaller:
     def __init__(self, bot: "KiranBot") -> None:
         self.client = bot
 
+    def _get_bytes(self, resp: httpx.Response) -> bytes:
+        return msgspec.json.encode(resp.json()["result"])
+
     async def _make_request(
         self,
         method: typing.Union[str, TelegramMethodName],
-        params: typing.Dict[str, typing.Any],
+        params: typing.Optional[typing.Dict[str, typing.Any]] = None,
         retry_count: int = 3,
         retry_delay: int = 1,
     ) -> typing.Optional[httpx.Response]:
@@ -140,7 +143,10 @@ class KiranCaller:
                     f"Caller Response:\n{response.text}",
                     "debug",
                 )
-                return response
+                if response.json()["ok"] is True:
+                    return response
+                else:
+                    return None
             except (asyncio.TimeoutError, httpx.TimeoutException):
                 if attempt < retry_count - 1:
                     self.client.log(
@@ -157,6 +163,51 @@ class KiranCaller:
                         message="Error while making request to Telegram.",
                         client=self.client,
                     )
+
+    async def get_me(self) -> typing.Optional[User]:
+        response = await self._make_request(method=TelegramMethodName.GET_ME)
+        if response is not None:
+            user = msgspec.json.decode(
+                self._get_bytes(response),
+                type=User,
+                strict=False,
+            )
+            return user
+        else:
+            return None
+
+    async def log_out(self) -> None:
+        response = await self._make_request(method=TelegramMethodName.LOG_OUT)
+        if response is not None:
+            self.client.log(
+                f"Log Out Response:\n{response.text}",
+                "debug",
+            )
+
+    async def close(self) -> None:
+        response = await self._make_request(method=TelegramMethodName.CLOSE)
+        if response is not None:
+            self.client.log(
+                f"Close Response:\n{response.text}",
+                "debug",
+            )
+
+    async def send_message(
+        self,
+        chat_id: typing.Union[int, str, Chat],
+        text: str,
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        parse_mode: typing.Optional[ParseMode] = None,
+        entities: typing.Optional[typing.List[MessageEntity]] = None,
+        link_preview_options: typing.Optional[LinkPreviewOptions] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_parameters: typing.Optional[ReplyParameters] = None,
+        reply_markup: typing.Optional[typing.Union[..., ...]] = None,
+        # TODO IMPLEMENT THIS !
+    ) -> typing.Optional[Message]: ...
 
     async def set_commands(
         self,
@@ -183,8 +234,14 @@ class KiranCaller:
         if language_code_encoded is not None:
             params["language_code"] = language_code_encoded
 
-        resp = await self._make_request(
+        await self._make_request(
             method=TelegramMethodName.SET_MY_COMMANDS,
             params=params,
         )
-        self.client.log(resp.content, "debug")  # type: ignore
+
+        self.client.log(
+            "Commands merged with the bot Instance, if otherwise an exception is raised.",
+            "debug",
+        )
+        del encoder
+        self.client.log("The encoder for commands has been deleted.", "debug")

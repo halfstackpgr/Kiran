@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing
 import msgspec
 
-from .media import Sticker
 from .interactions import Location
 from ..core.enums import MaskPositionPoint
 
@@ -24,25 +23,6 @@ class BirthDate(msgspec.Struct):
     year: int
     """
     Year of birth, from 1 to 9999.
-    """
-
-
-class BusinessIntro(msgspec.Struct):
-    """
-    Contains information about the start page settings of a Telegram Business account.
-    """
-
-    title: typing.Optional[str]
-    """
-    Title text of the business intro
-    """
-    message: typing.Optional[str]
-    """
-    Message text of the business intro
-    """
-    sticker: typing.Optional[Sticker]
-    """
-    Sticker of the business intro
     """
 
 
@@ -123,19 +103,19 @@ class LinkPreviewOptions(msgspec.Struct):
     """
     True, if the link preview is disabled
     """
-    url: typing.Optional[str]
+    url: typing.Optional[str] = None
     """
     URL to use for the link preview. If empty, then the first URL found in the message text will be used.
     """
-    prefer_small_media: typing.Optional[bool]
+    prefer_small_media: typing.Optional[bool] = False
     """
     True, if the media in the link preview is supposed to be shrunk; ignored if the URL isn't explicitly specified or media size change isn't supported for the preview.
     """
-    prefer_large_media: typing.Optional[bool]
+    prefer_large_media: typing.Optional[bool] = False
     """
     True, if the media in the link preview is supposed to be enlarged; ignored if the URL isn't explicitly specified or media size change isn't supported for the preview.
     """
-    show_above_text: typing.Optional[bool]
+    show_above_text: typing.Optional[bool] = False
     """
     True, if the link preview must be shown above the message text; otherwise, the link preview will be shown below the message text.
     """

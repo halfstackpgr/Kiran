@@ -11,51 +11,45 @@ class User(msgspec.Struct):
     This object represents a Telegram user or bot.
     """
 
-    id: int
+    first_name: str
+    """The user's first name."""
+    id: typing.Optional[int] = None
     """
     Unique identifier for this user or bot.
     """
-    is_bot: bool
+    is_bot: typing.Optional[bool] = False
     """
     `True`, if this user is a bot
     """
-    first_name: str
-    """The user's first name."""
-
-    last_name: typing.Optional[str]
+    last_name: typing.Optional[str] = None
     """
     User's or bot's last name
     """
-    username: typing.Optional[str]
+    username: typing.Optional[str] = None
     """
     User's or bot's username
     """
-    language_code: typing.Optional[str]
+    language_code: typing.Optional[str] = None
     """
     IETF language tag of the user's language
     """
-    is_premium: bool
+    is_premium: typing.Optional[bool] = False
     """
     True, if this user is a Telegram Premium user
     """
-
-    can_join_groups: bool
+    can_join_groups: typing.Optional[bool] = False
     """
     True, if the bot can be invited to groups
     """
-    can_join_groups: bool
-    """
-    True, if privacy mode is disabled for the bot
-    """
-    can_read_all_group_messages: bool
+    can_read_all_group_messages: typing.Optional[bool] = False
     """
     True, if the bot can read all messages in channels
     """
-    supports_inline_queries: bool
+    supports_inline_queries: typing.Optional[bool] = False
     """
     True, if the bot supports inline queries
     """
-    can_connect_to_business: bool
+    can_connect_to_business: typing.Optional[bool] = False
     """
     True, if the bot can be connected to a Telegram Business account to receive its messages.
     """
@@ -67,19 +61,19 @@ class SharedUser(msgspec.Struct):
     Unique identifier for this user or bot.
     """
 
-    first_name: typing.Optional[str]
+    first_name: typing.Optional[str] = None
     """
     User's or bot's first name
     """
-    last_name: typing.Optional[str]
+    last_name: typing.Optional[str] = None
     """
     User's or bot's last name
     """
-    username: typing.Optional[str]
+    username: typing.Optional[str] = None
     """
     User's or bot's username
     """
-    photo: typing.Optional[PhotoSize]
+    photo: typing.Optional[PhotoSize] = None
     """
     User's or bot's profile photo
     """

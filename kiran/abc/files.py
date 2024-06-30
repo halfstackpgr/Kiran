@@ -21,7 +21,7 @@ class File(msgspec.Struct):
     """
     File size in bytes.
     """
-    file_path: typing.Optional[str]
+    file_path: typing.Optional[str] = None
     """
     File path. Use `https://api.telegram.org/file/bot<token>/<file_path>` to get the file.
     """
