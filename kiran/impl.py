@@ -4,6 +4,7 @@ import typing
 import datetime
 import asyncio
 import httpx
+import functools
 
 from ._about import __banner__
 from .errors import CommandImplementationError
@@ -296,6 +297,7 @@ class KiranBot:
 def implements(
     method: ImplementationMethod,
 ) -> typing.Callable[[CommandFunction], CommandFunction]:
+    @functools.wraps
     def decorator(func: CommandFunction) -> CommandFunction:
         setattr(func, "__implements__", method)
         return func
