@@ -4,7 +4,6 @@ import typing
 import datetime
 import asyncio
 import httpx
-import functools #type: ignore
 
 from ._about import __banner__
 from .errors import CommandImplementationError

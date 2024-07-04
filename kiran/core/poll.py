@@ -75,10 +75,11 @@ class PollingManager:
             "debug",
         )
 
-    def _extract_second_frame_name(self, s: str) -> str:
-        parts = s.split("/")
-        part = parts[1]
-        cmd_name = part.split(" ")[0]
+    def _extract_command_name(self, s: str) -> str:
+        cmd_name = s.split("/")[1]
+        cmd_name = cmd_name.split(" ")[0]
+        cmd_name = cmd_name.split("@")[0]
+        print(cmd_name)
         return cmd_name
 
     async def _make_polling_session(
@@ -140,7 +141,7 @@ class PollingManager:
             if command_pretext.type is MessageEntityType.BOT_COMMAND:
                 assert obj_msg.text is not None
                 net_cmds = self._slash_commands | self._common_commands
-                cmd_name = self._extract_second_frame_name(obj_msg.text)
+                cmd_name = self._extract_command_name(obj_msg.text)
                 for cmd in net_cmds.keys():
                     if cmd_name == cmd.name:
                         await net_cmds[cmd](

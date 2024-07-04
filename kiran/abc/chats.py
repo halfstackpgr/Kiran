@@ -43,3 +43,70 @@ class ChatLocation(msgspec.Struct):
     """
     Location address; 1-64 characters, as defined by the chat owner
     """
+
+
+class ChatAdministratorRights(msgspec.Struct):
+    """
+    Represents the rights of an administrator in a chat.
+    """
+
+    is_anonymous: bool
+    """
+    True, if the user's presence in the chat is hidden
+    """
+    can_manage_chat: bool
+    """
+    True, if the administrator can change chat title, photo and other settings
+    """
+    can_delete_messages: bool
+    """
+    True, if the administrator can delete messages of other users
+    """
+    can_manage_video_chat: bool
+    """
+    True, if the administrator can manage voice chat
+    """
+    can_restrict_members: bool
+    """
+    True, if the administrator can restrict, ban or unban chat members
+    """
+    can_promote_members: bool
+    """
+    True, if the administrator can add new administrators with a subset of their own privileges or demote administrators that were directly or indirectly promoted by them
+    """
+    can_change_info: bool
+    """
+    True, if the administrator can change chat title, photo and other settings
+    """
+    can_invite_users: bool
+    """
+    True, if the administrator can invite new users to the chat
+    """
+    can_post_stories: bool
+    """
+    True, if the user is allowed to create, rename, close, and reopen forum topics
+    """
+    can_edit_stories: bool
+    """
+    True, if the administrator can edit messages of other users
+    """
+    can_delete_stories: bool
+    """
+    True, if the administrator can delete stories posted by other users
+    """
+    can_post_messages: bool
+    """
+    True, if the administrator can post messages from the chat
+    """
+    can_edit_messages: bool
+    """
+    True, if the administrator can edit messages of other users
+    """
+    can_pin_messages: bool
+    """
+    True, if the administrator can pin messages
+    """
+    can_manage_topics: bool
+    """
+    True, if the user is allowed to create, rename, close, and reopen forum topics
+    """

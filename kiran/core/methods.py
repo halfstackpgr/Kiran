@@ -5,11 +5,18 @@ import httpx
 import msgspec
 import asyncio
 import enum
+import dataclasses
 
 
 from ..errors import KiranPollingError
 from ..abc.bots import BotCommand, BotCommandScope, BotCommandScopeDefault
 from ..abc.misc import LinkPreviewOptions
+from ..abc.userinterface import (
+    InlineKeyboardMarkup,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    ForceReply,
+)
 from ..abc.dependant import User, Chat, Message, MessageEntity, ReplyParameters
 from ..components.commands import LanguageCode
 from ..core.enums import ParseMode
@@ -18,7 +25,8 @@ if typing.TYPE_CHECKING:
     from ..impl import KiranBot
 
 
-class TelegramMethodName(enum.Enum):
+@dataclasses.dataclass
+class TelegramMethodName:
     """
     All methods in the Bot API are case-insensitive. We support GET and POST HTTP methods. Use either [URL query string](https://en.wikipedia.org/wiki/Query_string) or application/json or application/x-www-form-urlencoded or multipart/form-data for passing parameters in Bot API requests.
     On successful call, a JSON-object containing the result will be returned.
@@ -125,9 +133,29 @@ class TelegramMethodName(enum.Enum):
 class KiranCaller:
     def __init__(self, bot: "KiranBot") -> None:
         self.client = bot
+        self.encoder = msgspec.json.Encoder()
 
     def _get_bytes(self, resp: httpx.Response) -> bytes:
         return msgspec.json.encode(resp.json()["result"])
+
+    def build_params(self, **kwargs: typing.Any):
+        params: typing.Dict[str, typing.Any] = dict()
+        for name, argument in kwargs.items():
+            if argument is not None:
+                try:
+                    if not isinstance(argument, enum.Enum):
+                        params[name] = self.encoder.encode(argument).decode()
+                except Exception:
+                    if isinstance(argument, enum.Enum):
+                        params[name] = argument.value
+                    else:
+                        params[name] = argument
+                finally:
+                    if isinstance(argument, enum.Enum):
+                        params[name] = argument.value
+
+        self.client.log("Params:\n" + str(params), "debug")
+        return params
 
     async def _make_request(
         self,
@@ -205,9 +233,191 @@ class KiranCaller:
         protect_content: typing.Optional[bool] = None,
         message_effect_id: typing.Optional[str] = None,
         reply_parameters: typing.Optional[ReplyParameters] = None,
-        reply_markup: typing.Optional[typing.Union[..., ...]] = None,
-        # TODO IMPLEMENT THIS !
-    ) -> typing.Optional[Message]: ...
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        if isinstance(chat_id, Chat):
+            chat_id = chat_id.id
+        response = await self._make_request(
+            method=TelegramMethodName.SEND_MESSAGE,
+            params=self.build_params(
+                chat_id=chat_id,
+                text=text,
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                parse_mode=parse_mode,
+                entities=entities,
+                link_preview_options=link_preview_options,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_parameters=reply_parameters,
+                reply_markup=reply_markup,
+            ),
+        )
+
+        if response is not None:
+            message = msgspec.json.decode(
+                self._get_bytes(response),
+                type=Message,
+                strict=False,
+            )
+            return message
+        else:
+            return None
+
+    async def forward_message(
+        self,
+        chat_id: typing.Union[int, str, Chat],
+        from_chat_id: typing.Union[int, str, Chat],
+        message_id: int,
+        message_thread_id: typing.Optional[int] = None,
+        disable_notification: typing.Optional[bool] = False,
+        protect_content: typing.Optional[bool] = None,
+    ) -> typing.Optional[Message]:
+        if isinstance(chat_id, Chat):
+            chat_id = chat_id.id
+        response = await self._make_request(
+            method=TelegramMethodName.FORWARD_MESSAGE,
+            params=self.build_params(
+                chat_id=chat_id,
+                from_chat_id=from_chat_id,
+                message_id=message_id,
+                message_thread_id=message_thread_id,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+            ),
+        )
+
+        if response is not None:
+            message = msgspec.json.decode(
+                self._get_bytes(response),
+                type=Message,
+                strict=False,
+            )
+            return message
+        else:
+            return None
+
+    async def forward_messages(
+        self,
+        chat_id: typing.Union[int, str, Chat],
+        from_chat_id: typing.Union[int, str, Chat],
+        message_id: typing.List[int],
+        message_thread_id: typing.Optional[int] = None,
+        disable_notification: typing.Optional[bool] = False,
+        protect_content: typing.Optional[bool] = None,
+    ) -> typing.Optional[Message]:
+        if isinstance(chat_id, Chat):
+            chat_id = chat_id.id
+
+        response = await self._make_request(
+            method=TelegramMethodName.FORWARD_MESSAGE,
+            params=self.build_params(
+                chat_id=chat_id,
+                from_chat_id=from_chat_id,
+                message_id=message_id,
+                message_thread_id=message_thread_id,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+            ),
+        )
+
+        if response is not None:
+            message = msgspec.json.decode(
+                self._get_bytes(response),
+                type=Message,
+                strict=False,
+            )
+            return message
+        else:
+            return None
+
+    async def copy_message(
+        self,
+        chat_id: typing.Union[int, str, Chat],
+        from_chat_id: typing.Union[int, str, Chat],
+        message_id: int,
+        message_thread_id: typing.Optional[int] = None,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Optional[ParseMode] = None,
+        caption_entities: typing.Optional[typing.List[MessageEntity]] = None,
+        disable_notification: typing.Optional[bool] = False,
+        show_caption_above_media: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        reply_parameters: typing.Optional[ReplyParameters] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[int]:
+        response = await self._make_request(
+            method=TelegramMethodName.COPY_MESSAGE,
+            params=self.build_params(
+                chat_id=chat_id,
+                from_chat_id=from_chat_id,
+                message_id=message_id,
+                message_thread_id=message_thread_id,
+                caption=caption,
+                parse_mode=parse_mode,
+                caption_entities=caption_entities,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                show_caption_above_media=show_caption_above_media,
+                reply_parameters=reply_parameters,
+                reply_markup=reply_markup,
+            ),
+        )
+        if response is not None:
+            return int(response.json()["result"]["message_id"])
+        else:
+            return None
+
+    async def copy_messages(
+        self,
+        chat_id: typing.Union[int, str, Chat],
+        from_chat_id: typing.Union[int, str, Chat],
+        message_id: typing.List[int],
+        message_thread_id: typing.Optional[int] = None,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Optional[ParseMode] = None,
+        caption_entities: typing.Optional[typing.List[MessageEntity]] = None,
+        disable_notification: typing.Optional[bool] = False,
+        protect_content: typing.Optional[bool] = None,
+    ) -> typing.Optional[typing.List[int]]:
+        response = await self._make_request(
+            method=TelegramMethodName.COPY_MESSAGES,
+            params=self.build_params(
+                chat_id=chat_id,
+                from_chat_id=from_chat_id,
+                message_id=message_id,
+                message_thread_id=message_thread_id,
+                caption=caption,
+                parse_mode=parse_mode,
+                caption_entities=caption_entities,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+            ),
+        )
+        if response is not None:
+            message_ids = msgspec.json.decode(
+                self._get_bytes(response),
+                type=typing.List[int],
+                strict=False,
+            )
+            return message_ids
+        else:
+            return None
 
     async def set_commands(
         self,
@@ -219,29 +429,11 @@ class KiranCaller:
             typing.Union[str, LanguageCode]
         ] = None,
     ) -> None:
-        encoder = msgspec.json.Encoder()
-        list_of_commands = encoder.encode(bot_commands).decode("utf-8")
-        scope_encoded = encoder.encode(command_scope).decode("utf-8")
-        language_code_encoded = (
-            encoder.encode(language_code_iso).decode("utf-8")
-            if language_code_iso
-            else None
-        )
-        params = {
-            "commands": list_of_commands,
-            "scope": scope_encoded,
-        }
-        if language_code_encoded is not None:
-            params["language_code"] = language_code_encoded
-
         await self._make_request(
             method=TelegramMethodName.SET_MY_COMMANDS,
-            params=params,
+            params=self.build_params(
+                commands=bot_commands,
+                scope=command_scope,
+                language_code=language_code_iso,
+            ),
         )
-
-        self.client.log(
-            "Commands merged with the bot Instance, if otherwise an exception is raised.",
-            "debug",
-        )
-        del encoder
-        self.client.log("The encoder for commands has been deleted.", "debug")
