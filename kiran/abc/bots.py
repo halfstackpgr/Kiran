@@ -1,5 +1,6 @@
-import msgspec
 import typing
+
+import msgspec
 
 
 class BotCommand(msgspec.Struct):

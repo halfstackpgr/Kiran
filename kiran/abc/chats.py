@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+
 import msgspec
 
 if typing.TYPE_CHECKING:
@@ -8,9 +9,7 @@ if typing.TYPE_CHECKING:
 
 
 class ChatPhoto(msgspec.Struct):
-    """
-    A class representing the chat photo.
-    """
+    """A class representing the chat photo."""
 
     small_file_id: str
     """
@@ -31,9 +30,7 @@ class ChatPhoto(msgspec.Struct):
 
 
 class ChatLocation(msgspec.Struct):
-    """
-    This object represents a location to which a chat is connected.
-    """
+    """This object represents a location to which a chat is connected."""
 
     location: typing.Optional[Location]
     """
@@ -46,9 +43,7 @@ class ChatLocation(msgspec.Struct):
 
 
 class ChatAdministratorRights(msgspec.Struct):
-    """
-    Represents the rights of an administrator in a chat.
-    """
+    """Represents the rights of an administrator in a chat."""
 
     is_anonymous: bool
     """

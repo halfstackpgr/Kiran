@@ -4,9 +4,7 @@ import msgspec
 
 
 class ReactionTypeCustomEmoji(msgspec.Struct):
-    """
-    The reaction is based on a custom emoji.
-    """
+    """The reaction is based on a custom emoji."""
 
     type: str
     """
@@ -19,9 +17,7 @@ class ReactionTypeCustomEmoji(msgspec.Struct):
 
 
 class ReactionTypeEmoji(msgspec.Struct):
-    """
-    The reaction is based on an emoji.
-    """
+    """The reaction is based on an emoji."""
 
     type: str
     """

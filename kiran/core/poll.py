@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import typing
-import datetime
-import msgspec
 import asyncio
+import datetime
 import traceback
+import typing
 
-from ..components.commands import CallableBotCommandDetails
+import msgspec
+
+from ..abc.dependant import Message  # noqa: TCH001
+from ..components.commands import CallableBotCommandDetails  # noqa: TCH001
 from ..components.context import CommandContext
 from ..core.enums import MessageEntityType
-from ..abc.dependant import Message
-
-# import traceback
 
 if typing.TYPE_CHECKING:
     from ..impl import KiranBot
@@ -47,29 +46,60 @@ class PollingManager:
         client: "KiranBot",
         timeout: int = 999,
     ) -> None:
+        self.client = client
+        self.client.log(
+            "Polling Manager: Client has been initialized.", "debug"
+        )
         self.response_binder = msgspec.json.Decoder(
             type=CallResponse, strict=False
+        )
+        self.client.log(
+            "Polling Manager: Response Binder has been initialized.", "debug"
         )
         self.result_binder = msgspec.json.Decoder(
             type=CalledResult, strict=False
         )
+        self.client.log(
+            "Polling Manager: Result Binder has been initialized.", "debug"
+        )
         self._session = client.session
+        self.client.log(
+            "Polling Manager: Client session has been initialized.", "debug"
+        )
         self.START_TIME = datetime.datetime.now()
-        self.client = client
+        self.client.log(
+            "Polling Manager: Start time taken into account.", "debug"
+        )
         self.timeout = timeout
+        self.client.log(
+            "Polling Manager: Timeout has been taken into account.", "debug"
+        )
         self._slash_commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.client.log(
+            "Polling Manager: Slash command storage initialized.", "debug"
+        )
         self._prefix_commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.client.log(
+            "Polling Manager: prefix command storage initialized.", "debug"
+        )
         self._common_commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.client.log(
+            "Polling Manager: Common command storage initialized.", "debug"
+        )
         self.last_event_id: int = 0
+        self.client.log(
+            "Polling Manager: Last Event ID set to 0, offset taken into account.",
+            "debug",
+        )
         self.client.log(
             f"Polling has started for Telegram bot with timeout: {timeout}. Waiting for events.",
             "debug",
@@ -79,7 +109,6 @@ class PollingManager:
         cmd_name = s.split("/")[1]
         cmd_name = cmd_name.split(" ")[0]
         cmd_name = cmd_name.split("@")[0]
-        print(cmd_name)
         return cmd_name
 
     async def _make_polling_session(
@@ -94,7 +123,11 @@ class PollingManager:
                 },
                 timeout=self.timeout,
             )
-            self.client.log(f"Polling Response:\n{response.text}", "debug")
+            if response.json()["result"] is not None:
+                self.client.log(
+                    f"Polling Response:\n{msgspec.json.format(response.text, indent=4)}",
+                    "debug",
+                )
             response_call = self.response_binder.decode(response.read())
             if response_call.ok is True:
                 updates = response_call.result
@@ -109,8 +142,8 @@ class PollingManager:
             return response_call
         except Exception as e:
             self.client.log(
-                f"Error while making request to Telegram:\n {str(e)}",
-                "error",
+                message=f"Error while making request to Telegram:\n {e}",
+                log_type="error",
             )
             self.client.log(traceback.format_exc(), "debug")
             print(traceback.format_exc())
@@ -142,7 +175,7 @@ class PollingManager:
                 assert obj_msg.text is not None
                 net_cmds = self._slash_commands | self._common_commands
                 cmd_name = self._extract_command_name(obj_msg.text)
-                for cmd in net_cmds.keys():
+                for cmd in net_cmds:
                     if cmd_name == cmd.name:
                         await net_cmds[cmd](
                             CommandContext(
@@ -167,18 +200,17 @@ class PollingManager:
         while True:
             try:
                 response = await self._make_polling_session()
-                if response is not None:
-                    if response.ok is True:
-                        updates = response.result
-                        for update in updates:
-                            if update.update_id > self.last_event_id:
-                                self.last_event_id = update.update_id
-                                if update.message is not None:
-                                    await self._invoke_command(update.message)
+                if response is not None and response.ok is True:
+                    updates = response.result
+                    for update in updates:
+                        if update.update_id > self.last_event_id:
+                            self.last_event_id = update.update_id
+                            if update.message is not None:
+                                await self._invoke_command(update.message)
                 await asyncio.sleep(1)
             except Exception as e:
                 self.client.log(
-                    f"Error encountered while tracing updates: {str(e)}",
+                    f"Error encountered while tracing updates: {e}",
                     "error",
                 )
                 await asyncio.sleep(5)

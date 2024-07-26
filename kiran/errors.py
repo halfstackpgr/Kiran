@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-
-import typing
-import asyncio
-import webbrowser
 import sys
-
+import typing
+import webbrowser
 
 if typing.TYPE_CHECKING:
+    import asyncio
+
     from .impl import KiranBot
 
 

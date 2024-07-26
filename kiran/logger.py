@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import sys
 import datetime
-import typing
 import pathlib
+import sys
+import typing
+
 import colorama
 
 LoggingType = typing.Literal["info", "warning", "debug", "error"]
@@ -102,7 +103,8 @@ class KiranLogger:
                     raise ValueError(
                         "Invalid log file type. Must be str or an instance of pathlib.Path"
                     )
-                self.file_session = open(self.log_file, mode="a")
+                with open(self.log_file, mode="a") as f:
+                    self.file_session = f
 
             self.clean_logs = self.log_settings.clean_logs
             self.enable_colors = self.log_settings.enable_colors
@@ -233,8 +235,6 @@ class KiranLogger:
             pass
 
     def clear_logs(self) -> None:
-        """
-        Clears the terminal.
-        """
+        """Clears the terminal."""
         sys.stdout.write("\033[H\033[J")
         sys.stdout.flush()

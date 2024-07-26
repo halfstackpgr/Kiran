@@ -1,26 +1,33 @@
 from __future__ import annotations
 
-import typing
-import datetime
 import asyncio
+import inspect
+import typing
+
 import httpx
 
 from ._about import __banner__
-from .errors import CommandImplementationError
-from .logger import LoggerSettings, KiranLogger, DefaultSettings
-from .abc.bots import BotCommandScope, BotCommandScopeDefault, BotCommand
-from .core.poll import PollingManager
+from .abc.bots import BotCommand
+from .abc.bots import BotCommandScope
+from .abc.bots import BotCommandScopeDefault
+from .components.commands import CallableBotCommandDetails
+from .components.commands import CommandImplements
+from .components.commands import LanguageCode
+from .components.context import CommandContext
 from .core.cache import KiranCache
 from .core.methods import KiranCaller
-from .components.commands import CallableBotCommandDetails, LanguageCode
-from .components.commands import CommandImplements
-from .components.context import CommandContext
-
+from .core.poll import PollingManager
+from .errors import CommandImplementationError
+from .logger import DefaultSettings
+from .logger import KiranLogger
+from .logger import LoggerSettings
 
 CommandFunction = typing.Callable[[CommandContext], typing.Awaitable[None]]
 ImplementationMethod = typing.Union[int, CommandImplements]
 
 if typing.TYPE_CHECKING:
+    import datetime
+
     from .core.events import KiranEvent
 
 
@@ -87,40 +94,59 @@ class KiranBot:
                 typing.Callable[["KiranEvent"], typing.Awaitable[None]]
             ],
         ] = {}
+        self.log("Event subscription storage initialized.", "debug")
         self.session = httpx.AsyncClient(
             base_url=f"https://api.telegram.org/bot{token}", timeout=999
         )
+        self.log("Httpx session initialized.", "debug")
         if polling_manager is None:
             polling_manager = PollingManager(client=self, timeout=999)
+            self.log(
+                "Polling manager has been created. Was not defined by the developer.",
+                "debug",
+            )
         self._commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.log("All command subscription storage initialized.", "debug")
         self._slash_commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.log("Slash command subscription storage initialized.", "debug")
         self._prefix_commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.log("Prefix command subscription storage initialized.", "debug")
         self._common_commands: typing.Dict[
             CallableBotCommandDetails,
             typing.Callable[["CommandContext"], typing.Awaitable[None]],
         ] = {}
+        self.log("Common command subscription storage initialized.", "debug")
         self.polling_manager = polling_manager
+        self.log("Polling manager has been initialized.", "debug")
         self._datetime_task: typing.Dict[
             datetime.datetime, typing.Callable[..., typing.Any]
         ] = {}
+        self.log(
+            "Task storage based on datetime execution initialized.", "debug"
+        )
         self._cache: KiranCache = KiranCache()
+        self.log("Cache has been initialized.", "debug")
         self._token = token
+        self.log("Token has been taken into account.", "debug")
         self._prefix = prefix
+        self.log("Prefix has been taken into account.", "debug")
         self.caller = KiranCaller(bot=self)
+        self.log("Caller has been initialised for call jobs.", "debug")
+        self.event_loop = asyncio.new_event_loop()
+        self.log("Event loop has been defined.", "debug")
         self.log(
             "Bot Client has been initialized. Would now try to pool the bot to receive events.",
             "debug",
         )
-        self.event_loop = asyncio.new_event_loop()
 
     def command(
         self,
@@ -290,6 +316,13 @@ class KiranBot:
             self.event_loop.run_forever()
         except KeyboardInterrupt:
             self.log("The bot has been interrupted.", "info")
+            self.shutdown()
+        except Exception as e:
+            self.log(
+                f"Error encountered while tryinng to run the event loop: {e}",
+                "error",
+            )
+            self.log(f"Element Suspected: {inspect.findsource(e)}", "error")  # type: ignore
             self.shutdown()
 
 

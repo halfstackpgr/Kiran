@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import typing
+
 import msgspec
-
-
-from .media import PhotoSize, Animation
-from .messages import MessageEntity
 from ..core.enums import PollType
+from .media import Animation
+from .media import PhotoSize
+from .messages import MessageEntity
 
 
 class Location(msgspec.Struct):
@@ -37,9 +37,7 @@ class Location(msgspec.Struct):
 
 
 class Contact(msgspec.Struct):
-    """
-    This object represents a phone contact.
-    """
+    """This object represents a phone contact."""
 
     phone_number: str
     """
@@ -75,9 +73,7 @@ class Dice(msgspec.Struct):
 
 
 class Game(msgspec.Struct):
-    """
-    This object represents a game. Use BotFather to create and edit games, their short names will act as unique identifiers.
-    """
+    """This object represents a game. Use BotFather to create and edit games, their short names will act as unique identifiers."""
 
     title: str
     """
@@ -106,9 +102,7 @@ class Game(msgspec.Struct):
 
 
 class PollOptions(msgspec.Struct):
-    """
-    Information about one answer option in a poll.
-    """
+    """Information about one answer option in a poll."""
 
     text: str
     """
@@ -125,9 +119,7 @@ class PollOptions(msgspec.Struct):
 
 
 class Poll(msgspec.Struct):
-    """
-    This object contains information about a poll.
-    """
+    """This object contains information about a poll."""
 
     id: str
     """
@@ -188,9 +180,7 @@ class Poll(msgspec.Struct):
 
 
 class Venue(msgspec.Struct):
-    """
-    This object represents a venue.
-    """
+    """This object represents a venue."""
 
     location: Location
     """

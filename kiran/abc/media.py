@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import msgspec
 import typing
+
+import msgspec
 
 
 class PhotoSize(msgspec.Struct):
-    """
-    A class representing the photo size.
-    """
+    """A class representing the photo size."""
 
     file_id: str
     """
@@ -32,9 +31,7 @@ class PhotoSize(msgspec.Struct):
 
 
 class Animation(msgspec.Struct):
-    """
-    This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound).
-    """
+    """This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound)."""
 
     file_id: str
     """
@@ -75,9 +72,7 @@ class Animation(msgspec.Struct):
 
 
 class Audio(msgspec.Struct):
-    """
-    This object represents an audio file to be treated as music by the Telegram clients.
-    """
+    """This object represents an audio file to be treated as music by the Telegram clients."""
 
     file_id: str
     """
@@ -118,9 +113,7 @@ class Audio(msgspec.Struct):
 
 
 class Document(msgspec.Struct):
-    """
-    A general file (as opposed to photos, voice messages and audio files).
-    """
+    """A general file (as opposed to photos, voice messages and audio files)."""
 
     file_id: str
     """
@@ -149,9 +142,7 @@ class Document(msgspec.Struct):
 
 
 class Video(msgspec.Struct):
-    """
-    This object represents a video file.
-    """
+    """This object represents a video file."""
 
     file_id: str
     """
@@ -192,9 +183,7 @@ class Video(msgspec.Struct):
 
 
 class VideoNote(msgspec.Struct):
-    """
-    This object represents a [video message](https://telegram.org/blog/video-messages-and-telescope) (available in Telegram apps as of [v.4.0](https://telegram.org/blog/video-messages-and-telescope)).
-    """
+    """This object represents a [video message](https://telegram.org/blog/video-messages-and-telescope) (available in Telegram apps as of [v.4.0](https://telegram.org/blog/video-messages-and-telescope))."""
 
     file_id: str
     """
@@ -223,9 +212,7 @@ class VideoNote(msgspec.Struct):
 
 
 class Voice(msgspec.Struct):
-    """
-    This object represents a voice note.
-    """
+    """This object represents a voice note."""
 
     file_id: str
     """

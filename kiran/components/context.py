@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import typing
-import datetime
-
 
 if typing.TYPE_CHECKING:
-    from kiran.impl import KiranBot
+    import datetime
+
     from kiran.core.methods import KiranCaller
+    from kiran.impl import KiranBot
 
 
 if typing.TYPE_CHECKING:
-    from ..impl import KiranBot
     from ..core.methods import KiranCaller
+    from ..impl import KiranBot
 
 
 class KiranContext:
@@ -121,3 +121,6 @@ class CommandContext(KiranContext):
             Message that invoked the command.
         """
         return self._invoking_message
+
+    @staticmethod
+    async def respond(**krwags: typing.Any): ...

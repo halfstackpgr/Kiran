@@ -1,5 +1,7 @@
 from __future__ import annotations
-from setuptools import setup, find_namespace_packages
+
+from setuptools import find_namespace_packages
+from setuptools import setup
 
 with open("README.md", "r", encoding="utf-8") as f:
     description = f.read()

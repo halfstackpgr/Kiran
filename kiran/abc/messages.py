@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import msgspec
 import typing
 
+import msgspec
 
-from .users import User
 from ..core.enums import MessageEntityType
+from .users import User
 
 
 class MessageEntity(msgspec.Struct):
-    """
-    This object represents one special entity in a text message. For example, hashtags, usernames, URLs, etc.
-    """
+    """This object represents one special entity in a text message. For example, hashtags, usernames, URLs, etc."""
 
     type: MessageEntityType
     """

@@ -1,16 +1,14 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import typing
-import msgspec
 
-from .interactions import Location
-from ..core.enums import MaskPositionPoint
+import msgspec
+from ..core.enums import MaskPositionPoint  # noqa: TCH001
+from .interactions import Location  # noqa: TCH001
 
 
 class BirthDate(msgspec.Struct):
-    """
-    Describes the birthdate of a user.
-    """
+    """Describes the birthdate of a user."""
 
     day: int
     """
@@ -27,9 +25,7 @@ class BirthDate(msgspec.Struct):
 
 
 class MaskPosition(msgspec.Struct):
-    """
-    Describes the position on faces where a mask should be placed by default.
-    """
+    """Describes the position on faces where a mask should be placed by default."""
 
     point: MaskPositionPoint
     """
@@ -50,9 +46,7 @@ class MaskPosition(msgspec.Struct):
 
 
 class BusinessLocation(msgspec.Struct):
-    """
-    Contains information about the location of a Telegram Business account.
-    """
+    """Contains information about the location of a Telegram Business account."""
 
     address: str
     """
@@ -65,9 +59,7 @@ class BusinessLocation(msgspec.Struct):
 
 
 class BusinessOpeningHoursInterval(msgspec.Struct):
-    """
-    Describes an interval of time during which a business is open.
-    """
+    """Describes an interval of time during which a business is open."""
 
     opening_minute: int
     """
@@ -80,9 +72,7 @@ class BusinessOpeningHoursInterval(msgspec.Struct):
 
 
 class BusinessOpeningHours(msgspec.Struct):
-    """
-    Contains information about the opening hours of a Telegram Business account.
-    """
+    """Contains information about the opening hours of a Telegram Business account."""
 
     time_zone_name: typing.List[str]
     """
@@ -122,9 +112,7 @@ class LinkPreviewOptions(msgspec.Struct):
 
 
 class LoginUrl(msgspec.Struct):
-    """
-    This object represents a parameter of the inline keyboard button used to automatically authorize a user. Serves as a great replacement for the Telegram Login Widget when the user is coming from Telegram. All the user needs to do is tap/click a button and confirm that they want to log in
-    """
+    """This object represents a parameter of the inline keyboard button used to automatically authorize a user. Serves as a great replacement for the Telegram Login Widget when the user is coming from Telegram. All the user needs to do is tap/click a button and confirm that they want to log in."""
 
     url: str
     """

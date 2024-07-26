@@ -1,48 +1,40 @@
-import msgspec
 import typing
 
-from .messages import (
-    MessageEntity,
-    TextQuote,
-)
+import msgspec
 
-from .users import User
-
-from .misc import LinkPreviewOptions, MaskPosition
-
-from .interactions import (
-    Contact,
-    Dice,
-    Game,
-    Poll,
-    Venue,
-    Location,
-)
-from .media import (
-    Audio,
-    Animation,
-    PhotoSize,
-    Document,
-    Video,
-    VideoNote,
-    Voice,
-)
-from ..core.enums import ChatType, ParseMode
+from ..core.enums import ChatType
+from ..core.enums import MessageOriginType
+from ..core.enums import ParseMode
+from ..core.enums import StickerType
 from .chats import ChatPhoto
 from .files import File
-from .misc import (
-    BirthDate,
-    BusinessLocation,
-    BusinessOpeningHours,
-)
-from .reactions import ReactionTypeCustomEmoji, ReactionTypeEmoji
-from ..core.enums import MessageOriginType, StickerType
+from .interactions import Contact
+from .interactions import Dice
+from .interactions import Game
+from .interactions import Location
+from .interactions import Poll
+from .interactions import Venue
+from .media import Animation
+from .media import Audio
+from .media import Document
+from .media import PhotoSize
+from .media import Video
+from .media import VideoNote
+from .media import Voice
+from .messages import MessageEntity
+from .messages import TextQuote
+from .misc import BirthDate
+from .misc import BusinessLocation
+from .misc import BusinessOpeningHours
+from .misc import LinkPreviewOptions
+from .misc import MaskPosition
+from .reactions import ReactionTypeCustomEmoji
+from .reactions import ReactionTypeEmoji
+from .users import User
 
 
 class Sticker(msgspec.Struct):
-    """
-    Represents a telegram sticker.
-    """
+    """Represents a telegram sticker."""
 
     file_id: str
     """
@@ -107,9 +99,7 @@ class Sticker(msgspec.Struct):
 
 
 class BaseMessageOrigin(msgspec.Struct):
-    """
-    This object represents a message origin.
-    """
+    """This object represents a message origin."""
 
     type: MessageOriginType
     """
@@ -123,9 +113,7 @@ class BaseMessageOrigin(msgspec.Struct):
 
 
 class Chat(msgspec.Struct):
-    """
-    A instance representing a chat.
-    """
+    """A instance representing a chat."""
 
     id: int
     """
@@ -198,9 +186,7 @@ class Giveaway(msgspec.Struct):
 
 
 class GiveawayWinners(msgspec.Struct):
-    """
-    Represents a message about the completion of a giveaway with public winners.
-    """
+    """Represents a message about the completion of a giveaway with public winners."""
 
     chat: Chat
     """
@@ -249,9 +235,7 @@ class GiveawayWinners(msgspec.Struct):
 
 
 class MessageOriginChat(BaseMessageOrigin):
-    """
-    The message was originally sent on behalf of a chat to a group chat.
-    """
+    """The message was originally sent on behalf of a chat to a group chat."""
 
     sender_chat: Chat
     """
@@ -264,9 +248,7 @@ class MessageOriginChat(BaseMessageOrigin):
 
 
 class MessageOriginChannel(BaseMessageOrigin):
-    """
-    The message was originally sent on behalf of a channel to a group chat.
-    """
+    """The message was originally sent on behalf of a channel to a group chat."""
 
     chat: Chat
     """
@@ -283,9 +265,7 @@ class MessageOriginChannel(BaseMessageOrigin):
 
 
 class Story(msgspec.Struct):
-    """
-    Represents a telegram story
-    """
+    """Represents a telegram story."""
 
     chat: Chat
     """
@@ -298,9 +278,7 @@ class Story(msgspec.Struct):
 
 
 class BusinessIntro(msgspec.Struct):
-    """
-    Contains information about the start page settings of a Telegram Business account.
-    """
+    """Contains information about the start page settings of a Telegram Business account."""
 
     title: typing.Optional[str] = None
     """
@@ -317,9 +295,7 @@ class BusinessIntro(msgspec.Struct):
 
 
 class ChatFullInfo(Chat):
-    """
-    A instance representing a grouped information of a chat.
-    """
+    """A instance representing a grouped information of a chat."""
 
     accent_color_id: typing.Optional[int] = None
     """
@@ -415,9 +391,7 @@ class ChatFullInfo(Chat):
 
 
 class MessageAutoDeleteTimerChanged(msgspec.Struct):
-    """
-    This object represents a service message about a change in auto-delete timer settings.
-    """
+    """This object represents a service message about a change in auto-delete timer settings."""
 
     message_auto_delete_time: int
     """
@@ -426,9 +400,7 @@ class MessageAutoDeleteTimerChanged(msgspec.Struct):
 
 
 class MessageOriginUser(BaseMessageOrigin):
-    """
-    The message was originally sent by a known user.
-    """
+    """The message was originally sent by a known user."""
 
     sender_user: User
     """
@@ -437,9 +409,7 @@ class MessageOriginUser(BaseMessageOrigin):
 
 
 class MessageOriginHiddenUser(BaseMessageOrigin):
-    """
-    The message was originally sent by a hidden user.
-    """
+    """The message was originally sent by a hidden user."""
 
     sender_user_name: str
     """
@@ -448,9 +418,7 @@ class MessageOriginHiddenUser(BaseMessageOrigin):
 
 
 class ExternalReplyInfo:
-    """
-    This object contains information about a message that is being replied to, which may come from another chat or forum topic.
-    """
+    """This object contains information about a message that is being replied to, which may come from another chat or forum topic."""
 
     origin: typing.Type[BaseMessageOrigin]
     """
@@ -468,9 +436,7 @@ class ExternalReplyInfo:
 
 
 class InaccessibleMessage(msgspec.Struct, tag=True):
-    """
-    This object describes a message that was deleted or is otherwise inaccessible to the bot.
-    """
+    """This object describes a message that was deleted or is otherwise inaccessible to the bot."""
 
     chat: Chat
     """
@@ -487,9 +453,7 @@ class InaccessibleMessage(msgspec.Struct, tag=True):
 
 
 class Message(msgspec.Struct, tag=True):
-    """
-    A telegram message.
-    """
+    """A telegram message."""
 
     message_id: int
     """
@@ -733,9 +697,7 @@ class GiveawayCompleted(msgspec.Struct):
 
 
 class ReplyParameters(msgspec.Struct):
-    """
-    Contains information about the message reply.
-    """
+    """Contains information about the message reply."""
 
     message_id: int
     """

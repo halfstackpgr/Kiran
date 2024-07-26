@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import enum
 import dataclasses
+import enum
 
 
 class ChatType(enum.Enum):
-    """
-    Enum representing a chat type.
-    """
+    """Enum representing a chat type."""
 
     PRIVATE = "private"
     """Represents a private chat."""
@@ -20,9 +18,7 @@ class ChatType(enum.Enum):
 
 
 class StickerType(enum.Enum):
-    """
-    Enum representing a sticker type.
-    """
+    """Enum representing a sticker type."""
 
     REGULAR = "regular"
     """Represents a standard sticker."""
@@ -33,9 +29,7 @@ class StickerType(enum.Enum):
 
 
 class MaskPositionPoint(enum.Enum):
-    """
-    Enum representing a mask position point.
-    """
+    """Enum representing a mask position point."""
 
     FOREHEAD = "forehead"
     """Represents a mask position point on the forehead."""
@@ -48,9 +42,7 @@ class MaskPositionPoint(enum.Enum):
 
 
 class MessageOriginType(enum.Enum):
-    """
-    Enum representing a message origin type.
-    """
+    """Enum representing a message origin type."""
 
     USER = "user"
     """Represents a message origin type of a user."""
@@ -63,9 +55,7 @@ class MessageOriginType(enum.Enum):
 
 
 class MessageEntityType(enum.Enum):
-    """
-    Type of the message entity.
-    """
+    """Type of the message entity."""
 
     MENTION = "mention"
     """A mention: `@username`."""
@@ -108,9 +98,7 @@ class MessageEntityType(enum.Enum):
 
 
 class PollType(enum.Enum):
-    """
-    Enum representing a poll type.
-    """
+    """Enum representing a poll type."""
 
     QUIZ = "quiz"
     """Represents a quiz poll."""

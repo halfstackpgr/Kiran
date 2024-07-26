@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import typing
+
 import msgspec
 
-from .chats import ChatAdministratorRights
-from .misc import LoginUrl
+if typing.TYPE_CHECKING:
+    from .chats import ChatAdministratorRights
+    from .misc import LoginUrl
 
 
 class ForceReply(msgspec.Struct, tag=True):
@@ -54,7 +56,7 @@ class KeyboardButtonRequestUsers(msgspec.Struct, tag=True):
     """
     Upon receiving a message with this object, Telegram clients will display a personal keyboard to the user. This keyboard will
     always contain only one button - an [inline keyboard](https://core.telegram.org/bots#inline-keyboards-and-on-the-fly-updating) that
-    always results in exactly one text message. [See more](https://core.telegram.org/bots/api#keyboardbuttonrequestusers)
+    always results in exactly one text message. [See more](https://core.telegram.org/bots/api#keyboardbuttonrequestusers).
     """
 
     request_id = int
@@ -90,7 +92,7 @@ class KeyboardButtonRequestUsers(msgspec.Struct, tag=True):
 class KeyboardButtonRequestChats(msgspec.Struct, tag=True):
     """
     Upon receiving a message with this object, Telegram clients will display a button requesting that the user
-    add the bot to the attachment menu. [See more](https://core.telegram.org/bots/api#keyboardbuttonrequestchats)
+    add the bot to the attachment menu. [See more](https://core.telegram.org/bots/api#keyboardbuttonrequestchats).
     """
 
     request_id = int
@@ -140,9 +142,7 @@ class KeyboardButtonRequestChats(msgspec.Struct, tag=True):
 
 
 class KeyboardButtonPollType(msgspec.Struct):
-    """
-    This object represents type of a poll, which is allowed to be created and sent when the corresponding button is pressed. [See more](https://core.telegram.org/bots/api#keyboardbuttonpolltype)
-    """
+    """This object represents type of a poll, which is allowed to be created and sent when the corresponding button is pressed. [See more](https://core.telegram.org/bots/api#keyboardbuttonpolltype)."""
 
     type: typing.Optional[str] = None
     """
@@ -151,9 +151,7 @@ class KeyboardButtonPollType(msgspec.Struct):
 
 
 class WebAppInfo(msgspec.Struct, tag=True):
-    """
-    This object represents a service message about a Web App. [See more](https://core.telegram.org/bots/api#webappinfo)
-    """
+    """This object represents a service message about a Web App. [See more](https://core.telegram.org/bots/api#webappinfo)."""
 
     url: typing.Optional[str] = None
     """
@@ -162,9 +160,7 @@ class WebAppInfo(msgspec.Struct, tag=True):
 
 
 class KeyboardButton(msgspec.Struct, tag=True):
-    """
-    This object represents one button of the reply keyboard. [See more](https://core.telegram.org/bots/api#keyboardbutton)
-    """
+    """This object represents one button of the reply keyboard. [See more](https://core.telegram.org/bots/api#keyboardbutton)."""
 
     text: str
     """
@@ -197,9 +193,7 @@ class KeyboardButton(msgspec.Struct, tag=True):
 
 
 class ReplyKeyboardMarkup(msgspec.Struct, tag=True):
-    """
-    This object represents a custom keyboard with reply options. [See more](https://core.telegram.org/bots/api#replykeyboardmarkup)
-    """
+    """This object represents a custom keyboard with reply options. [See more](https://core.telegram.org/bots/api#replykeyboardmarkup)."""
 
     keyboard: typing.List[
         typing.List[typing.Union[KeyboardButton, typing.List[KeyboardButton]]]
@@ -231,9 +225,7 @@ class ReplyKeyboardMarkup(msgspec.Struct, tag=True):
 
 
 class InlineKeyboardButton(msgspec.Struct, tag=True):
-    """
-    This object represents one button of an inline keyboard. [See more](https://core.telegram.org/bots/api#inlinekeyboardbutton)
-    """
+    """This object represents one button of an inline keyboard. [See more](https://core.telegram.org/bots/api#inlinekeyboardbutton)."""
 
     text: str
     """
@@ -274,9 +266,7 @@ class InlineKeyboardButton(msgspec.Struct, tag=True):
 
 
 class InlineKeyboardMarkup(msgspec.Struct, tag=True):
-    """
-    Upon receiving a message with this object, Telegram clients will display an [inline keyboard](https://core.telegram.org/bots#inline-keyboards-and-on-the-fly-updating) with attached buttons. [See more](https://core.telegram.org/bots/api#inlinekeyboardmarkup)
-    """
+    """Upon receiving a message with this object, Telegram clients will display an [inline keyboard](https://core.telegram.org/bots#inline-keyboards-and-on-the-fly-updating) with attached buttons. [See more](https://core.telegram.org/bots/api#inlinekeyboardmarkup)."""
 
     inline_keyboard: typing.List[typing.List[InlineKeyboardButton]]
     """

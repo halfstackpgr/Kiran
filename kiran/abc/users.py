@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import typing
+
 import msgspec
 
-from .media import PhotoSize
+if typing.TYPE_CHECKING:
+    from .media import PhotoSize
 
 
 class User(msgspec.Struct):
-    """
-    This object represents a Telegram user or bot.
-    """
+    """This object represents a Telegram user or bot."""
 
     first_name: str
     """The user's first name."""
@@ -80,9 +80,7 @@ class SharedUser(msgspec.Struct):
 
 
 class UsersShared(msgspec.Struct):
-    """
-    Contains information about the users whose identifiers were shared.
-    """
+    """Contains information about the users whose identifiers were shared."""
 
     request_id: int
     """

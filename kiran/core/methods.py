@@ -1,27 +1,33 @@
 from __future__ import annotations
 
+import asyncio
+import dataclasses
+import enum
 import typing
+
 import httpx
 import msgspec
-import asyncio
-import enum
-import dataclasses
 
-
+from ..abc.bots import BotCommand
+from ..abc.bots import BotCommandScope
+from ..abc.bots import BotCommandScopeDefault
+from ..abc.dependant import Chat
+from ..abc.dependant import Message
+from ..abc.dependant import MessageEntity
+from ..abc.dependant import ReplyParameters
+from ..abc.dependant import User
+from ..abc.reactions import ReactionTypeCustomEmoji, ReactionTypeEmoji
 from ..errors import KiranPollingError
-from ..abc.bots import BotCommand, BotCommandScope, BotCommandScopeDefault
-from ..abc.misc import LinkPreviewOptions
-from ..abc.userinterface import (
-    InlineKeyboardMarkup,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
-    ForceReply,
-)
-from ..abc.dependant import User, Chat, Message, MessageEntity, ReplyParameters
-from ..components.commands import LanguageCode
-from ..core.enums import ParseMode
 
 if typing.TYPE_CHECKING:
+    from ..abc.misc import LinkPreviewOptions
+    from ..abc.userinterface import ForceReply
+    from ..abc.userinterface import InlineKeyboardMarkup
+    from ..abc.userinterface import ReplyKeyboardMarkup
+    from ..abc.userinterface import ReplyKeyboardRemove
+    from ..components.commands import LanguageCode
+    from ..core.enums import ParseMode
+
     from ..impl import KiranBot
 
 
@@ -139,7 +145,7 @@ class KiranCaller:
         return msgspec.json.encode(resp.json()["result"])
 
     def build_params(self, **kwargs: typing.Any):
-        params: typing.Dict[str, typing.Any] = dict()
+        params: typing.Dict[str, typing.Any] = dict()  # noqa: C408
         for name, argument in kwargs.items():
             if argument is not None:
                 try:
@@ -387,11 +393,9 @@ class KiranCaller:
         self,
         chat_id: typing.Union[int, str, Chat],
         from_chat_id: typing.Union[int, str, Chat],
-        message_id: typing.List[int],
+        message_ids: typing.List[int],
         message_thread_id: typing.Optional[int] = None,
-        caption: typing.Optional[str] = None,
-        parse_mode: typing.Optional[ParseMode] = None,
-        caption_entities: typing.Optional[typing.List[MessageEntity]] = None,
+        remove_caption: typing.Optional[str] = None,
         disable_notification: typing.Optional[bool] = False,
         protect_content: typing.Optional[bool] = None,
     ) -> typing.Optional[typing.List[int]]:
@@ -400,24 +404,42 @@ class KiranCaller:
             params=self.build_params(
                 chat_id=chat_id,
                 from_chat_id=from_chat_id,
-                message_id=message_id,
+                message_ids=message_ids,
                 message_thread_id=message_thread_id,
-                caption=caption,
-                parse_mode=parse_mode,
-                caption_entities=caption_entities,
+                remove_caption=remove_caption,
                 disable_notification=disable_notification,
                 protect_content=protect_content,
             ),
         )
         if response is not None:
-            message_ids = msgspec.json.decode(
-                self._get_bytes(response),
-                type=typing.List[int],
-                strict=False,
-            )
-            return message_ids
+            return response.json()["result"]["message_ids"]
         else:
             return None
+
+    async def set_reaction(
+        self,
+        chat_id: typing.Optional[typing.Union[int, str]],
+        message_id: typing.Optional[int] = None,
+        reaction: typing.Optional[
+            typing.List[
+                typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]
+            ]
+        ] = None,
+        is_big: typing.Optional[bool] = False,
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.SET_MESSAGE_REACTION,
+            params=self.build_params(
+                chat_id=chat_id,
+                message_id=message_id,
+                reaction=reaction,
+                is_big=is_big,
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
 
     async def set_commands(
         self,
