@@ -7,7 +7,7 @@ import typing
 
 import msgspec
 
-from ..abc.dependant import Message  # noqa: TCH001
+from ..abc.dependent import Message  # noqa: TCH001
 from ..components.commands import CallableBotCommandDetails  # noqa: TCH001
 from ..components.context import CommandContext
 from ..core.enums import MessageEntityType
@@ -194,7 +194,7 @@ class PollingManager:
 
     async def start_polling(self):
         self.client.log(
-            "Bot has started to receieve events. Polling for dispatches started.",
+            "Bot has started to receive events. Polling for dispatches started.",
             "info",
         )
         while True:

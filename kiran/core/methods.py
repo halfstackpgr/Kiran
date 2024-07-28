@@ -11,23 +11,34 @@ import msgspec
 from ..abc.bots import BotCommand
 from ..abc.bots import BotCommandScope
 from ..abc.bots import BotCommandScopeDefault
-from ..abc.dependant import Chat
-from ..abc.dependant import Message
-from ..abc.dependant import MessageEntity
-from ..abc.dependant import ReplyParameters
-from ..abc.dependant import User
-from ..abc.reactions import ReactionTypeCustomEmoji, ReactionTypeEmoji
+from ..abc.chats import ChatPermissions
+from ..abc.dependent import Chat
+from ..abc.dependent import ChatFullInfo
+from ..abc.dependent import ChatInviteLink
+from ..abc.dependent import ChatMemberAdministrator
+from ..abc.dependent import ChatMemberBanned
+from ..abc.dependent import ChatMemberLeft
+from ..abc.dependent import ChatMemberMember
+from ..abc.dependent import ChatMemberOwner
+from ..abc.dependent import ChatMemberRestricted
+from ..abc.dependent import Message
+from ..abc.dependent import MessageEntity
+from ..abc.dependent import ReplyParameters
+from ..abc.dependent import User
+from ..abc.files import File
+from ..abc.users import UserProfilePhotos
 from ..errors import KiranPollingError
 
 if typing.TYPE_CHECKING:
     from ..abc.misc import LinkPreviewOptions
+    from ..abc.reactions import ReactionTypeCustomEmoji
+    from ..abc.reactions import ReactionTypeEmoji
     from ..abc.userinterface import ForceReply
     from ..abc.userinterface import InlineKeyboardMarkup
     from ..abc.userinterface import ReplyKeyboardMarkup
     from ..abc.userinterface import ReplyKeyboardRemove
     from ..components.commands import LanguageCode
     from ..core.enums import ParseMode
-
     from ..impl import KiranBot
 
 
@@ -140,7 +151,8 @@ class KiranCaller:
     def __init__(self, bot: "KiranBot") -> None:
         self.client = bot
         self.encoder = msgspec.json.Encoder()
-
+        self.client.log("Caller: JSON Encoder initialized.", "debug")
+    
     def _get_bytes(self, resp: httpx.Response) -> bytes:
         return msgspec.json.encode(resp.json()["result"])
 
@@ -150,7 +162,22 @@ class KiranCaller:
             if argument is not None:
                 try:
                     if not isinstance(argument, enum.Enum):
-                        params[name] = self.encoder.encode(argument).decode()
+                        # TODO Find an alternative and fast solution for these processing.
+                        # params.update(
+                        #    {
+                        #        params[name] : self.encoder.encode(argument).decode()
+                        #    }
+                        # )
+                        # this is not doing the '" thing, but is not encoding the arguments properly.
+                        # params[name] = self.encoder.encode(argument).decode() # this is doing the '" thing but is encoding.
+                        # every arguments properly!
+                        encoded_value = (
+                            self.encoder.encode(argument)
+                            .decode()
+                            .strip('"')
+                            .replace("\\n", "\n")
+                        )
+                        params[name] = encoded_value
                 except Exception:
                     if isinstance(argument, enum.Enum):
                         params[name] = argument.value
@@ -174,7 +201,7 @@ class KiranCaller:
             try:
                 response = await self.client.session.get(method, params=params)  # type: ignore
                 self.client.log(
-                    f"Caller Response:\n{response.text}",
+                    f"Caller Response:\n{msgspec.json.format(response.text, indent=4)}",
                     "debug",
                 )
                 if response.json()["ok"] is True:
@@ -440,6 +467,460 @@ class KiranCaller:
             return response.json()["result"]
         else:
             return False
+
+    async def get_user_profile_photos(
+        self,
+        user_id: int,
+        offset: typing.Optional[int] = None,
+        limit: typing.Optional[int] = None,
+    ) -> typing.Optional[UserProfilePhotos]:
+        response = await self._make_request(
+            method=TelegramMethodName.GET_USER_PROFILE_PHOTOS,
+            params=self.build_params(
+                user_id=user_id, offset=offset, limit=limit
+            ),
+        )
+        if response is not None:
+            profile_photos = msgspec.json.decode(
+                self._get_bytes(response),
+                type=UserProfilePhotos,
+                strict=False,
+            )
+            return profile_photos
+
+        else:
+            return None
+
+    async def get_file(self, file_id: str) -> typing.Optional[File]:
+        response = await self._make_request(
+            method=TelegramMethodName.GET_FILE,
+            params=self.build_params(file_id=file_id),
+        )
+        if response is not None:
+            file = msgspec.json.decode(
+                self._get_bytes(response), type=File, strict=False
+            )
+            return file
+        else:
+            return None
+
+    async def ban_chat_member(
+        self,
+        chat_id: typing.Union[str, int],
+        user_id: int,
+        until_date: typing.Optional[int],
+        revoke_messages: typing.Optional[bool],
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.BAN_CHAT_MEMBER,
+            params=self.build_params(
+                chat_id=chat_id,
+                user_id=user_id,
+                until_date=until_date,
+                revoke_messages=revoke_messages,
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def unban_chat_member(
+        self,
+        chat_id: typing.Union[str, int],
+        user_id: int,
+        only_if_banned: typing.Optional[bool] = None,
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.UNBAN_CHAT_MEMBER,
+            params=self.build_params(
+                chat_id=chat_id, user_id=user_id, only_if_banned=only_if_banned
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def restrict_chat_member(
+        self,
+        chat_id: typing.Union[str, int],
+        user_id: int,
+        permissions: ChatPermissions,
+        use_independent_chat_permissions: typing.Optional[bool] = None,
+        until_date: typing.Optional[int] = None,
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.RESTRICT_CHAT_MEMBERS,
+            params=self.build_params(
+                chat_id=chat_id,
+                user_id=user_id,
+                permissions=permissions,
+                use_independent_chat_permissions=use_independent_chat_permissions,
+                until_date=until_date,
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def promote_chat_member(
+        self,
+        chat_id: typing.Union[str, int],
+        user_id: int,
+        is_anonymous: typing.Optional[bool] = None,
+        can_manage_chat: typing.Optional[bool] = None,
+        can_delete_messages: typing.Optional[bool] = None,
+        can_manage_video_chats: typing.Optional[bool] = None,
+        can_restrict_members: typing.Optional[bool] = None,
+        can_promote_members: typing.Optional[bool] = None,
+        can_change_info: typing.Optional[bool] = None,
+        can_invite_users: typing.Optional[bool] = None,
+        can_post_stories: typing.Optional[bool] = None,
+        can_edit_stories: typing.Optional[bool] = None,
+        can_delete_stories: typing.Optional[bool] = None,
+        can_post_messages: typing.Optional[bool] = None,
+        can_edit_messages: typing.Optional[bool] = None,
+        can_pin_messages: typing.Optional[bool] = None,
+        can_manage_topics: typing.Optional[bool] = None,
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.PROMOTE_CHAT_MEMBER,
+            params=self.build_params(
+                chat_id=chat_id,
+                user_id=user_id,
+                is_anonymous=is_anonymous,
+                can_manage_chat=can_manage_chat,
+                can_delete_messages=can_delete_messages,
+                can_manage_video_chats=can_manage_video_chats,
+                can_restrict_members=can_restrict_members,
+                can_promote_members=can_promote_members,
+                can_change_info=can_change_info,
+                can_invite_users=can_invite_users,
+                can_post_stories=can_post_stories,
+                can_edit_stories=can_edit_stories,
+                can_delete_stories=can_delete_stories,
+                can_post_messages=can_post_messages,
+                can_edit_messages=can_edit_messages,
+                can_pin_messages=can_pin_messages,
+                can_manage_topics=can_manage_topics,
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def set_chat_administrator_custom_title(
+        self, chat_id: typing.Union[str, int], user_id: int, custom_title: str
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.SET_CHAT_ADMINISTRATOR_CUSTOM_TITLE,
+            params=self.build_params(
+                chat_id=chat_id, user_id=user_id, custom_title=custom_title
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def ban_chat_sender_chat(
+        self, chat_id: typing.Union[str, int], sender_chat_id: int
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.BAN_CHAT_SENDER_CHAT,
+            params=self.build_params(
+                chat_id=chat_id, sender_chat_id=sender_chat_id
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def unban_chat_sender_chat(
+        self, chat_id: typing.Union[str, int], sender_chat_id: int
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.UNBAN_CHAT_SENDER_CHAT,
+            params=self.build_params(
+                chat_id=chat_id, sender_chat_id=sender_chat_id
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def set_chat_permissions(
+        self,
+        chat_id: typing.Union[str, int],
+        permissions: ChatPermissions,
+        use_independent_chat_permissions: typing.Optional[bool] = None,
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.SET_CHAT_PERMISSIONS,
+            params=self.build_params(
+                chat_id=chat_id,
+                permissions=permissions,
+                use_independent_chat_permissions=use_independent_chat_permissions,
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def export_chat_invite_link(
+        self, chat_id: typing.Union[str, int]
+    ) -> typing.Optional[str]:
+        response = await self._make_request(
+            method=TelegramMethodName.EXPORT_CHAT_INVITE_LINK,
+            params=self.build_params(chat_id=chat_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return None
+
+    async def create_chat_invite_link(
+        self,
+        chat_id: typing.Union[str, int],
+        name: typing.Optional[str] = None,
+        expire_date: typing.Optional[int] = None,
+        member_limit: typing.Optional[int] = None,
+        creates_join_request: typing.Optional[bool] = None,
+    ) -> typing.Optional[ChatInviteLink]:
+        response = await self._make_request(
+            method=TelegramMethodName.CREATE_CHAT_INVITE_LINK,
+            params=self.build_params(
+                chat_id=chat_id,
+                name=name,
+                expire_date=expire_date,
+                member_limit=member_limit,
+                creates_join_request=creates_join_request,
+            ),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=ChatInviteLink, strict=False
+            )
+        else:
+            return None
+
+    async def edit_chat_invite_link(
+        self,
+        chat_id: typing.Union[str, int],
+        invite_link: str,
+        expire_date: typing.Optional[int] = None,
+        member_limit: typing.Optional[int] = None,
+        creates_join_request: typing.Optional[bool] = None,
+    ) -> typing.Optional[ChatInviteLink]:
+        response = await self._make_request(
+            method=TelegramMethodName.EDIT_CHAT_INVITE_LINK,
+            params=self.build_params(
+                chat_id=chat_id,
+                invite_link=invite_link,
+                expire_date=expire_date,
+                member_limit=member_limit,
+                creates_join_request=creates_join_request,
+            ),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=ChatInviteLink, strict=False
+            )
+        else:
+            return None
+
+    async def revoke_chat_invite_link(
+        self, chat_id: typing.Union[str, int], invite_link: str
+    ) -> typing.Optional[ChatInviteLink]:
+        response = await self._make_request(
+            method=TelegramMethodName.REVOKE_CHAT_INVITE_LINK,
+            params=self.build_params(chat_id=chat_id, invite_link=invite_link),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=ChatInviteLink, strict=False
+            )
+        else:
+            return None
+
+    async def approve_chat_join_request(
+        self, chat_id: typing.Union[str, int], user_id: int
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.APPROVE_CHAT_JOIN_REQUEST,
+            params=self.build_params(chat_id=chat_id, user_id=user_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def decline_chat_join_request(
+        self, chat_id: typing.Union[str, int], user_id: int
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.DECLINE_CHAT_JOIN_REQUEST,
+            params=self.build_params(chat_id=chat_id, user_id=user_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def set_chat_photo(
+        self, chat_id: typing.Union[str, int], photo: typing.BinaryIO
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.SET_CHAT_PHOTO,
+            params=self.build_params(chat_id=chat_id, photo=photo),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def delete_chat_photo(self, chat_id: typing.Union[str, int]) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.DELETE_CHAT_PHOTO,
+            params=self.build_params(chat_id=chat_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def set_chat_title(
+        self, chat_id: typing.Union[str, int], title: str
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.SET_CHAT_TITLE,
+            params=self.build_params(chat_id=chat_id, title=title),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def set_chat_description(
+        self, chat_id: typing.Union[str, int], description: str
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.SET_CHAT_DESCRIPTION,
+            params=self.build_params(chat_id=chat_id, description=description),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def pin_chat_message(
+        self,
+        chat_id: typing.Union[str, int],
+        message_id: int,
+        disable_notification: typing.Optional[bool] = None,
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.PIN_CHAT_MESSAGE,
+            params=self.build_params(
+                chat_id=chat_id,
+                message_id=message_id,
+                disable_notification=disable_notification,
+            ),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def unpin_chat_message(
+        self, chat_id: typing.Union[str, int], message_id: int
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.UNPIN_CHAT_MESSAGE,
+            params=self.build_params(chat_id=chat_id, message_id=message_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def unpin_all_chat_messages(
+        self, chat_id: typing.Union[str, int]
+    ) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.UNPIN_ALL_CHAT_MESSAGES,
+            params=self.build_params(chat_id=chat_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def leave_chat(self, chat_id: typing.Union[str, int]) -> bool:
+        response = await self._make_request(
+            method=TelegramMethodName.LEAVE_CHAT,
+            params=self.build_params(chat_id=chat_id),
+        )
+        if response is not None:
+            return response.json()["result"]
+        else:
+            return False
+
+    async def get_chat(
+        self, chat_id: typing.Union[str, int]
+    ) -> typing.Optional[ChatFullInfo]:
+        response = await self._make_request(
+            method=TelegramMethodName.GET_CHAT,
+            params=self.build_params(chat_id=chat_id),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=ChatFullInfo, strict=False
+            )
+        else:
+            return None
+
+    async def get_chat_administrators(
+        self, chat_id: typing.Union[str, int]
+    ) -> typing.Optional[
+        typing.List[
+            typing.Union[
+                ChatMemberRestricted,
+                ChatMemberAdministrator,
+                ChatMemberMember,
+                ChatMemberLeft,
+                ChatMemberBanned,
+                ChatMemberOwner,
+            ]
+        ]
+    ]:
+        response = await self._make_request(
+            method=TelegramMethodName.GET_CHAT_ADMINISTRATORS,
+            params=self.build_params(chat_id=chat_id),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response),
+                type=typing.List[
+                    typing.Union[
+                        ChatMemberRestricted,
+                        ChatMemberAdministrator,
+                        ChatMemberMember,
+                        ChatMemberLeft,
+                        ChatMemberBanned,
+                        ChatMemberOwner,
+                    ]
+                ],
+                strict=False,
+            )
+        else:
+            return None
 
     async def set_commands(
         self,

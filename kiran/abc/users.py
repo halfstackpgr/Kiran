@@ -4,8 +4,7 @@ import typing
 
 import msgspec
 
-if typing.TYPE_CHECKING:
-    from .media import PhotoSize
+from .media import PhotoSize
 
 
 class User(msgspec.Struct):
@@ -13,6 +12,7 @@ class User(msgspec.Struct):
 
     first_name: str
     """The user's first name."""
+
     id: typing.Optional[int] = None
     """
     Unique identifier for this user or bot.
@@ -89,4 +89,17 @@ class UsersShared(msgspec.Struct):
     users: typing.List[SharedUser]
     """
     Information about users shared with the bot.
+    """
+
+
+class UserProfilePhotos(msgspec.Struct):
+    """Contains a user's profile pictures."""
+
+    total_count: int
+    """
+    Total number of profile pictures the target user has.
+    """
+    photos: typing.List[typing.List[PhotoSize]]
+    """
+    Requested profile pictures (in up to 4 sizes each)
     """

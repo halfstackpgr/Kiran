@@ -87,8 +87,3 @@ class KiranEvent:
     ) -> None:
         self.event_id = event_id
         self.event_time = datetime.datetime.now()
-
-
-class NewMessageEvent(KiranEvent):
-    def __init__(self, event_id: int, message: ...) -> None:
-        super().__init__(event_id)

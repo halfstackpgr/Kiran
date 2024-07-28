@@ -210,7 +210,7 @@ class KiranBot:
 
         return decorator
 
-    async def _poll(self) -> ...:
+    async def _poll(self):
         await self.polling_manager.poll()
 
     async def _register_slash_commands(self) -> None:
@@ -277,7 +277,7 @@ class KiranBot:
                 "Light spark has been made! Registering the commands.", "info"
             )
             await self.event_loop.create_task(self._register_slash_commands())
-            self.log("All commands are sucessfully engaged.", "info")
+            self.log("All commands are successfully engaged.", "info")
             await self._poll()
         except KeyboardInterrupt:
             self.log("The bot has been interrupted.", "debug")
@@ -299,6 +299,9 @@ class KiranBot:
 
         return decorator
 
+    def task(self, task_type: typing.Literal["datetime", "loop"], time: typing.Union[datetime.datetime, int]):
+        ...
+        
     async def dispatch(self, event: "KiranEvent") -> None:
         for handler in self._subscribed_events.get(type(event), []):
             await handler(event)
@@ -319,7 +322,7 @@ class KiranBot:
             self.shutdown()
         except Exception as e:
             self.log(
-                f"Error encountered while tryinng to run the event loop: {e}",
+                f"Error encountered while trying to run the event loop: {e}",
                 "error",
             )
             self.log(f"Element Suspected: {inspect.findsource(e)}", "error")  # type: ignore
@@ -334,3 +337,5 @@ def implements(
         return func
 
     return decorator
+
+

@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 import msgspec
+
 from ..core.enums import PollType
 from .media import Animation
 from .media import PhotoSize

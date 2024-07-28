@@ -56,17 +56,17 @@ class Sticker(msgspec.Struct):
     """
     Sticker height
     """
-    is_animated: bool
-    """
-    True, if the sticker is animated
-    """
-    is_video: bool
-    """
-    True, if the sticker is a video sticker
-    """
     thumbnail: typing.Optional[PhotoSize]
     """
     Sticker thumbnail in the .WEBP or .JPG format
+    """
+    is_animated: typing.Optional[bool] = False
+    """
+    True, if the sticker is animated
+    """
+    is_video: typing.Optional[bool] = False
+    """
+    True, if the sticker is a video sticker
     """
     emoji: typing.Optional[str] = None
     """
@@ -139,7 +139,7 @@ class Chat(msgspec.Struct):
     """
     Last name of the other party in a private chat
     """
-    is_forum: bool = False
+    is_forum: typing.Optional[bool] = False
     """
     True, if the supergroup is a forum has
     """
@@ -167,7 +167,7 @@ class Giveaway(msgspec.Struct):
     """
     True, if only users who join the chats after the giveaway started should be eligible to win.
     """
-    has_public_winners: bool
+    has_public_winners: typing.Optional[bool] = False
     """
     True, if the list of giveaway winners will be visible to everyone.
     """
@@ -680,8 +680,6 @@ class Message(msgspec.Struct, tag=True):
 
 
 class GiveawayCompleted(msgspec.Struct):
-    """ """
-
     winner_count: int
     """
     Number of winners
@@ -726,4 +724,205 @@ class ReplyParameters(msgspec.Struct):
     quote_positon: typing.Optional[int] = None
     """
     Position of the quote in the original message in UTF-16 code units.
+    """
+
+
+class ChatInviteLink(msgspec.Struct):
+    """Represents an invite link for a chat."""
+
+    invite_link: str
+    """
+    The invite link. If the link was created by another chat administrator, then the second part of the link will be replaced with “...”.
+    """
+    creator: User
+    """
+    Creator of the link
+    """
+    name: typing.Optional[str]
+    """
+    Invite link name
+    """
+    expire_date: typing.Optional[int]
+    """
+    Point in time (Unix timestamp) when the link will expire
+    """
+    member_limit: typing.Optional[int]
+    """
+    Maximum number of users that can be members of the chat simultaneously after joining the chat via this invite link; 1-99999
+    """
+    pending_join_request_count: typing.Optional[int]
+    """
+    Number of pending join requests created using this link
+    """
+    creates_join_request: typing.Optional[bool] = False
+    """
+    True, if users joining the chat via the link need to be approved by chat administrators.
+    """
+    is_primary: typing.Optional[bool] = False
+    """
+    True, if the link is primary
+    """
+    is_revoked: typing.Optional[bool] = False
+    """
+    True, if the link is revoked
+    """
+
+
+class ChatMember(msgspec.Struct):
+    status: str
+    """
+    The member's status in the chat.
+    """
+    user: User
+    """
+    Information about the user.
+    """
+
+
+class ChatMemberOwner(ChatMember, tag=True):
+    """Represents a chat member that owns the chat and has all administrator privileges."""
+
+    is_ananymous: typing.Optional[bool] = False
+    """
+    True, if the user's presence in the chat is hidden.
+    """
+    custom_title: typing.Optional[str] = None
+    """
+    Custom title for this user.
+    """
+
+
+class ChatMemberAdministrator(ChatMember, tag=True):
+    """Represents a chat member that has some additional privileges."""
+
+    can_be_edited: typing.Optional[bool] = False
+    """
+    If the bot is allowed to edit administrator privileges of that user.
+    """
+    is_anonymous: typing.Optional[bool] = False
+    """
+    If the user's presence in the chat is hidden.
+    """
+    can_manage_chat: typing.Optional[bool] = False
+    """
+    If the administrator can access the chat event log, get boost list, see hidden supergroup and channel members, report spam messages and ignore slow mode. Implied by any other administrator privilege.
+    """
+    can_delete_messages: typing.Optional[bool] = False
+    """
+    If the administrator can delete messages of other users.
+    """
+    can_manage_video_chats: typing.Optional[bool] = False
+    """
+    If the administrator can manage video chats.
+    """
+    can_restrict_members: typing.Optional[bool] = False
+    """
+    If the administrator can restrict, ban or unban chat members, or access supergroup statistics.
+    """
+    can_promote_members: typing.Optional[bool] = False
+    """
+    If the administrator can add new administrators with a subset of their own privileges or demote administrators that they have promoted, directly or indirectly (promoted by administrators that were appointed by the user).
+    """
+    can_change_info: typing.Optional[bool] = False
+    """
+    If the user is allowed to change the chat title, photo and other settings.
+    """
+    can_invite_users: typing.Optional[bool] = False
+    """
+    If the user is allowed to invite new users to the chat.
+    """
+    can_post_stories: typing.Optional[bool] = False
+    """
+    If the administrator can post stories to the chat.
+    """
+    can_edit_stories: typing.Optional[bool] = False
+    """
+    If the administrator can edit stories posted by other users, post stories to the chat page, pin chat stories, and access the chat's story archive.
+    """
+    can_delete_stories: typing.Optional[bool] = False
+    """
+    If the administrator can delete stories posted by other users.
+    """
+    can_post_messages: typing.Optional[bool] = False
+    """
+    If the administrator can post messages in the channel, or access channel statistics; for channels only.
+    """
+    can_edit_messages: typing.Optional[bool] = False
+    """
+    If the administrator can edit messages of other users and can pin messages; for channels only.
+    """
+    can_pin_messages: typing.Optional[bool] = False
+    """
+    If the user is allowed to pin messages; for groups and supergroups only.
+    """
+    can_manage_topics: typing.Optional[bool] = False
+    """
+    If the user is allowed to create, rename, close, and reopen forum topics; for supergroups only.
+    """
+    custom_title: typing.Optional[str] = None
+    """
+    Custom title for this user.
+    """
+
+
+class ChatMemberMember(ChatMember, tag=True):
+    """Represents a chat member that has no additional privileges or restrictions."""
+
+
+
+class ChatMemberRestricted(ChatMember, tag=True):
+    """Represents a chat member that is under certain restrictions in the chat. Supergroups only."""
+
+    is_member: typing.Optional[bool] = False
+    """
+    True, if the user is a member of the chat at the moment of the request
+    """
+    can_send_messages: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to send text messages, contacts, giveaways, giveaway winners, invoices, locations and venues
+    """
+    can_send_media_messages: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to send audios, documents, photos, videos, video notes and voice notes
+    """
+    can_send_other_messages: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to send animations, games, stickers and use inline bots
+    """
+    can_add_web_page_previews: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to add web page previews to their messages
+    """
+    can_change_info: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to change the chat title, photo and other settings
+    """
+    can_invite_users: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to invite new users to the chat
+    """
+    can_pin_messages: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to pin messages
+    """
+    can_manage_topics: typing.Optional[bool] = False
+    """
+    True, if the user is allowed to create forum topics
+    """
+    until_date: typing.Optional[int] = None
+    """
+    Date when restrictions will be lifted for this user; Unix time. If 0, then the user is restricted forever
+    """
+
+
+class ChatMemberLeft(ChatMember, tag=True):
+    """Represents a chat member that isn't currently a member of the chat, but may join it themselves."""
+
+
+class ChatMemberBanned(ChatMember, tag=True):
+    """Represents a chat member that was banned in the chat and can't return to the chat or view chat messages."""
+    
+    until_date: typing.Optional[int]
+    """
+    Date when restrictions will be lifted for this user; Unix time. If 0, then the user is banned forever
     """
