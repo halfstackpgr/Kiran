@@ -163,3 +163,5 @@ cython_debug/
 /test.py
 /bot_test.py
 /frametest.py
+/main.json
+/post.txt
