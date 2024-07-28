@@ -299,9 +299,12 @@ class KiranBot:
 
         return decorator
 
-    def task(self, task_type: typing.Literal["datetime", "loop"], time: typing.Union[datetime.datetime, int]):
-        ...
-        
+    def task(
+        self,
+        task_type: typing.Literal["datetime", "loop"],
+        time: typing.Union[datetime.datetime, int],
+    ): ...
+
     async def dispatch(self, event: "KiranEvent") -> None:
         for handler in self._subscribed_events.get(type(event), []):
             await handler(event)
@@ -337,5 +340,3 @@ def implements(
         return func
 
     return decorator
-
-

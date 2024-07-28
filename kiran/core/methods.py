@@ -152,7 +152,7 @@ class KiranCaller:
         self.client = bot
         self.encoder = msgspec.json.Encoder()
         self.client.log("Caller: JSON Encoder initialized.", "debug")
-    
+
     def _get_bytes(self, resp: httpx.Response) -> bytes:
         return msgspec.json.encode(resp.json()["result"])
 
@@ -889,7 +889,7 @@ class KiranCaller:
     async def get_chat_administrators(
         self, chat_id: typing.Union[str, int]
     ) -> typing.Optional[
-        typing.List[
+        typing.Sequence[
             typing.Union[
                 ChatMemberRestricted,
                 ChatMemberAdministrator,
@@ -905,9 +905,10 @@ class KiranCaller:
             params=self.build_params(chat_id=chat_id),
         )
         if response is not None:
-            return msgspec.json.decode(
+            print(self._get_bytes(response))
+            ps = msgspec.json.decode(
                 self._get_bytes(response),
-                type=typing.List[
+                type=typing.Sequence[
                     typing.Union[
                         ChatMemberRestricted,
                         ChatMemberAdministrator,
@@ -919,6 +920,7 @@ class KiranCaller:
                 ],
                 strict=False,
             )
+            return ps
         else:
             return None
 

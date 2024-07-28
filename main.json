@@ -1,20 +1,23 @@
 {
-    "ok": true,
-    "result": [
+    "ok":true,
+    "result":[
         {
-            "update_id": 591419812,
-            "message": {
-                "message_id": 70,
+            "update_id":591419812,
+            "message":{
+                "message_id":70,
                 "from": {
-                    "id": 6465894932,
-                    "is_bot": false,
-                    "first_name": "Console",
-                    "language_code": "en",
-                },
-                "chat": {"id": 6465894932, "first_name": "Console", "type": "private"},
-                "date": 1719669569,
-                "text": "!",
-            },
-        }
-    ],
+                    "id":6465894932,
+                    "is_bot":false,
+                    "first_name":"Console",
+                    "language_code":"en"},
+                    "chat": {
+                        "id":6465894932,
+                        "first_name":"Console",
+                        "type":"private"
+                        },
+                        "date":1719669569,
+                        "text":"!"
+                        }
+                        }
+                    ]
 }

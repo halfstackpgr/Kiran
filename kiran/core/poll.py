@@ -7,8 +7,8 @@ import typing
 
 import msgspec
 
-from ..abc.dependent import Message  # noqa: TCH001
-from ..components.commands import CallableBotCommandDetails  # noqa: TCH001
+from ..abc.dependent import Message
+from ..components.commands import CallableBotCommandDetails
 from ..components.context import CommandContext
 from ..core.enums import MessageEntityType
 
@@ -145,8 +145,7 @@ class PollingManager:
                 message=f"Error while making request to Telegram:\n {e}",
                 log_type="error",
             )
-            self.client.log(traceback.format_exc(), "debug")
-            print(traceback.format_exc())
+            self.client.log(traceback.format_exc(), "warning")
             await asyncio.sleep(5)
 
     async def add_command_list(

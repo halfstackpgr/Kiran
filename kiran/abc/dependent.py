@@ -768,18 +768,14 @@ class ChatInviteLink(msgspec.Struct):
     """
 
 
-class ChatMember(msgspec.Struct):
-    status: str
-    """
-    The member's status in the chat.
-    """
+class ChatMember(msgspec.Struct, tag_field="status"):
     user: User
     """
     Information about the user.
     """
 
 
-class ChatMemberOwner(ChatMember, tag=True):
+class ChatMemberOwner(ChatMember, tag="creator"):
     """Represents a chat member that owns the chat and has all administrator privileges."""
 
     is_ananymous: typing.Optional[bool] = False
@@ -792,7 +788,7 @@ class ChatMemberOwner(ChatMember, tag=True):
     """
 
 
-class ChatMemberAdministrator(ChatMember, tag=True):
+class ChatMemberAdministrator(ChatMember, tag="administrator"):
     """Represents a chat member that has some additional privileges."""
 
     can_be_edited: typing.Optional[bool] = False
@@ -865,12 +861,11 @@ class ChatMemberAdministrator(ChatMember, tag=True):
     """
 
 
-class ChatMemberMember(ChatMember, tag=True):
+class ChatMemberMember(ChatMember, tag="member"):
     """Represents a chat member that has no additional privileges or restrictions."""
 
 
-
-class ChatMemberRestricted(ChatMember, tag=True):
+class ChatMemberRestricted(ChatMember, tag="restricted"):
     """Represents a chat member that is under certain restrictions in the chat. Supergroups only."""
 
     is_member: typing.Optional[bool] = False
@@ -915,13 +910,13 @@ class ChatMemberRestricted(ChatMember, tag=True):
     """
 
 
-class ChatMemberLeft(ChatMember, tag=True):
+class ChatMemberLeft(ChatMember, tag="left"):
     """Represents a chat member that isn't currently a member of the chat, but may join it themselves."""
 
 
-class ChatMemberBanned(ChatMember, tag=True):
+class ChatMemberBanned(ChatMember, tag="kicked"):
     """Represents a chat member that was banned in the chat and can't return to the chat or view chat messages."""
-    
+
     until_date: typing.Optional[int]
     """
     Date when restrictions will be lifted for this user; Unix time. If 0, then the user is banned forever
