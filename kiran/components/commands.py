@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import enum
-import msgspec
 import typing
-from ..abc.bots import BotCommandScope, BotCommandScopeDefault
+
+import msgspec
+
+from ..abc.bots import BotCommandScope
+from ..abc.bots import BotCommandScopeDefault
 
 
 class LanguageCode(enum.Enum):
     """
     A two-letter ISO 639-1 language code. If empty, commands will be
     applied to all users from the given scope, for whose language
-    there are no dedicated commands
+    there are no dedicated commands.
     """
 
     AFAR = "aa"
@@ -174,9 +177,7 @@ class CallableBotCommandDetails(msgspec.Struct, frozen=True):
 
 
 class CommandImplements(enum.Enum):
-    """
-    Used to specify the type of command.
-    """
+    """Used to specify the type of command."""
 
     SLASH_COMMAND = 0
     """
