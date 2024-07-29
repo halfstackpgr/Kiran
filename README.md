@@ -19,8 +19,6 @@
   </p>
 </div>
 
-![Kiran Banner](https://github.com/user-attachments/assets/6a9a4c60-6021-4296-b3ae-a795f7e19b31)
-
 <div>
   <h3>Why Kiran?</h3>
   <h4>What sets Kiran apart from other frameworks?</h4>
@@ -31,4 +29,5 @@
   </p>
 </div>
 
-
+> [!NOTE]
+>   The fact that Kiran is developed on the notion that nothing can be completed without having the scope to be better, underscores the commitment to continued growth and development. In the meantime, Kiran is a valuable resource for developers and will continue to be refined and expanded in the future.
