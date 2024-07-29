@@ -20,9 +20,8 @@
 </div>
 
 <div>
+  ![Kiran Banner](https://github.com/user-attachments/assets/6a9a4c60-6021-4296-b3ae-a795f7e19b31)
   <h3>Why Kiran?</h3>
 </div>
 
-```ansi
-Welcome to [2;33mRebane[0m's [2;45m[2;37mDiscord[0m[2;45m[0m [2;31mC[0m[2;32mo[0m[2;33ml[0m[2;34mo[0m[2;35mr[0m[2;36me[0m[2;37md[0m Text Generator!
-```
+
