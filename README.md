@@ -1,3 +1,6 @@
+> [!WARNING]
+> **WARNING**: This library is currently in **early development phase** and is **NOT** ready for production use. It is **HIGHLY DISCOURAGED** to use this library with your bot token. The developer **DOES NOT TAKE ANY RESPONSIBILITY** if anything goes wrong or your bot is compromised due to the use of this library. Please wait for a stable release before using it for any purpose.
+
 ![Kiran Banner ](https://github.com/user-attachments/assets/a989d175-e8ac-4cc7-b26b-d7c8000859b4)
 
 <div>
