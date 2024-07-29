@@ -34,3 +34,52 @@
 
 > [!NOTE]
 >   The fact that Kiran is developed on the notion that nothing can be completed without having the scope to be better, underscores the commitment to continued growth and development. In the meantime, Kiran is a valuable resource for developers and will continue to be refined and expanded in the future.
+
+
+### Example Usage:
+
+```python
+import kiran
+import kiran.abc
+import kiran.core
+import kiran.core.enums
+import kiran.logger
+
+# Setting up a bot instance to use it in the bot.
+bot = kiran.KiranBot(
+    token="...",
+    logging_settings=kiran.LoggerSettings("standard", enable_colors=True),
+)
+
+# The decorator 'command' defines a command, follwed by the decorator
+# 'implements' which helps to implement the command in the bot as slash,
+# prefix or general(both) commands.
+@bot.command(
+    name="reactme",
+    description="Reacts to a message.",
+)
+@kiran.implements(kiran.CommandImplements.SLASH_COMMAND)
+async def test_command(command: kiran.CommandContext) -> None:
+    """
+    A basic test command that sends a message and reacts to it.
+    
+    Parameters
+    ----------
+    command : kiran.CommandContext
+        The context of the command.
+    """
+    msg = await command.call.send_message(
+        chat_id=command.chat_id,
+        text="Hello User\n```python\nprint('This is a test command.')\n```",
+        parse_mode=kiran.core.enums.ParseMode.MARKDOWN_V2,
+    )
+    if msg is not None:
+        await command.call.set_reaction(
+            chat_id=msg.chat.id,
+            message_id=msg.message_id,
+            reaction=[kiran.abc.ReactionTypeEmoji(emoji="💊", type="emoji")],
+        )
+
+# Start the bot to make it connect with the telegram API.
+bot.run()
+```
