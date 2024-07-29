@@ -19,8 +19,9 @@
   </p>
 </div>
 
+![Kiran Banner](https://github.com/user-attachments/assets/6a9a4c60-6021-4296-b3ae-a795f7e19b31)
+
 <div>
-  ![Kiran Banner](https://github.com/user-attachments/assets/6a9a4c60-6021-4296-b3ae-a795f7e19b31)
   <h3>Why Kiran?</h3>
 </div>
 
