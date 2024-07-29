@@ -10,14 +10,14 @@ from colorama import Fore
 __author__: typing.Final = "halfstackpgr"
 __email__: typing.Final = "halfstackpgr@gmail.com"
 __version__: typing.Final = "0.0.1"
-__telegram_api__ : typing.Final = "Bot API 7.7"
-__github_url__ : typing.Final = "https://github.com/halfstackpgr/kiran"
-__pypi_url__ : typing.Final = "https://pypi.org/project/kiran"
+__telegram_api__: typing.Final = "Bot API 7.7"
+__github_url__: typing.Final = "https://github.com/halfstackpgr/kiran"
+__pypi_url__: typing.Final = "https://pypi.org/project/kiran"
 __short_description__: typing.Final = (
     "A raged framework for wrapping up your telegram bot."
 )
 
-__banner__ : typing.Final = f"""
+__banner__: typing.Final = f"""
     {Fore.LIGHTRED_EX}oooo    oooo o8o{Fore.RESET}                                    {Fore.CYAN}Author:{Fore.RESET} {__author__}
     {Fore.LIGHTRED_EX}`888   .8P'  `"'{Fore.RESET}                                    {Fore.CYAN}Email:{Fore.RESET} {__email__}
     {Fore.WHITE}888  d8'    oooo  oooo d8b  .oooo.   ooo. .oo.{Fore.RESET}      {Fore.CYAN}Python Version:{Fore.RESET} {sys.version[:6]}
