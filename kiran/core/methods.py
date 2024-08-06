@@ -157,7 +157,7 @@ class KiranCaller:
         return msgspec.json.encode(resp.json()["result"])
 
     def build_params(self, **kwargs: typing.Any):
-        params: typing.Dict[str, typing.Any] = dict()  # noqa: C408
+        params: typing.Dict[str, typing.Any] = {}
         for name, argument in kwargs.items():
             if argument is not None:
                 try:
@@ -179,10 +179,11 @@ class KiranCaller:
                         )
                         params[name] = encoded_value
                 except Exception:
-                    if isinstance(argument, enum.Enum):
-                        params[name] = argument.value
-                    else:
-                        params[name] = argument
+                    params[name] = (
+                        argument.value
+                        if isinstance(argument, enum.Enum)
+                        else argument
+                    )
                 finally:
                     if isinstance(argument, enum.Enum):
                         params[name] = argument.value
@@ -190,25 +191,31 @@ class KiranCaller:
         self.client.log("Params:\n" + str(params), "debug")
         return params
 
-    async def _make_request(
+    async def _make_post(
         self,
         method: typing.Union[str, TelegramMethodName],
-        params: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        content: typing.Optional[typing.Any] = None,
+        file: typing.Optional[typing.Dict[str, typing.BinaryIO]] = None,
+        data: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        json: typing.Optional[typing.Dict[str, typing.Any]] = None,
         retry_count: int = 3,
         retry_delay: int = 1,
     ) -> typing.Optional[httpx.Response]:
         for attempt in range(retry_count):
             try:
-                response = await self.client.session.get(method, params=params)  # type: ignore
+                response = await self.client.session.post(
+                    str(method),
+                    data=data,
+                    files=file,
+                    json=json,
+                    content=content,
+                )
                 self.client.log(
                     f"Caller Response:\n{msgspec.json.format(response.text, indent=4)}",
                     "debug",
                 )
-                if response.json()["ok"] is True:
-                    return response
-                else:
-                    return None
-            except (asyncio.TimeoutError, httpx.TimeoutException):
+                return response if response.json()["ok"] is True else None
+            except (asyncio.TimeoutError, httpx.TimeoutException) as e:
                 if attempt < retry_count - 1:
                     self.client.log(
                         f"Error while making request to Telegram (attempt {attempt+1}/{retry_count}). Retrying in {retry_delay} seconds.",
@@ -223,17 +230,50 @@ class KiranCaller:
                     raise KiranPollingError(
                         message="Error while making request to Telegram.",
                         client=self.client,
+                    ) from e
+
+    async def _make_request(
+        self,
+        method: typing.Union[str, TelegramMethodName],
+        params: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        retry_count: int = 3,
+        retry_delay: int = 1,
+    ) -> typing.Optional[httpx.Response]:
+        for attempt in range(retry_count):
+            try:
+                response = await self.client.session.get(
+                    str(method), params=params
+                )
+                self.client.log(
+                    f"Caller Response:\n{msgspec.json.format(response.text, indent=4)}",
+                    "debug",
+                )
+                return response if response.json()["ok"] is True else None
+            except (asyncio.TimeoutError, httpx.TimeoutException) as e:
+                if attempt < retry_count - 1:
+                    self.client.log(
+                        f"Error while making request to Telegram (attempt {attempt+1}/{retry_count}). Retrying in {retry_delay} seconds.",
+                        "warning",
                     )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    self.client.log(
+                        f"Error while making request to Telegram (attempt {attempt+1}/{retry_count}). Giving up.",
+                        "error",
+                    )
+                    raise KiranPollingError(
+                        message="Error while making request to Telegram.",
+                        client=self.client,
+                    ) from e
 
     async def get_me(self) -> typing.Optional[User]:
         response = await self._make_request(method=TelegramMethodName.GET_ME)
         if response is not None:
-            user = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response),
                 type=User,
                 strict=False,
             )
-            return user
         else:
             return None
 
@@ -296,12 +336,11 @@ class KiranCaller:
         )
 
         if response is not None:
-            message = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response),
                 type=Message,
                 strict=False,
             )
-            return message
         else:
             return None
 
@@ -329,12 +368,11 @@ class KiranCaller:
         )
 
         if response is not None:
-            message = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response),
                 type=Message,
                 strict=False,
             )
-            return message
         else:
             return None
 
@@ -363,12 +401,11 @@ class KiranCaller:
         )
 
         if response is not None:
-            message = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response),
                 type=Message,
                 strict=False,
             )
-            return message
         else:
             return None
 
@@ -438,10 +475,11 @@ class KiranCaller:
                 protect_content=protect_content,
             ),
         )
-        if response is not None:
-            return response.json()["result"]["message_ids"]
-        else:
-            return None
+        return (
+            None
+            if response is None
+            else response.json()["result"]["message_ids"]
+        )
 
     async def set_reaction(
         self,
@@ -463,10 +501,7 @@ class KiranCaller:
                 is_big=is_big,
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def get_user_profile_photos(
         self,
@@ -481,13 +516,11 @@ class KiranCaller:
             ),
         )
         if response is not None:
-            profile_photos = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response),
                 type=UserProfilePhotos,
                 strict=False,
             )
-            return profile_photos
-
         else:
             return None
 
@@ -497,10 +530,9 @@ class KiranCaller:
             params=self.build_params(file_id=file_id),
         )
         if response is not None:
-            file = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response), type=File, strict=False
             )
-            return file
         else:
             return None
 
@@ -520,10 +552,7 @@ class KiranCaller:
                 revoke_messages=revoke_messages,
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def unban_chat_member(
         self,
@@ -537,10 +566,7 @@ class KiranCaller:
                 chat_id=chat_id, user_id=user_id, only_if_banned=only_if_banned
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def restrict_chat_member(
         self,
@@ -560,10 +586,7 @@ class KiranCaller:
                 until_date=until_date,
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def promote_chat_member(
         self,
@@ -607,10 +630,7 @@ class KiranCaller:
                 can_manage_topics=can_manage_topics,
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def set_chat_administrator_custom_title(
         self, chat_id: typing.Union[str, int], user_id: int, custom_title: str
@@ -621,10 +641,7 @@ class KiranCaller:
                 chat_id=chat_id, user_id=user_id, custom_title=custom_title
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def ban_chat_sender_chat(
         self, chat_id: typing.Union[str, int], sender_chat_id: int
@@ -635,10 +652,7 @@ class KiranCaller:
                 chat_id=chat_id, sender_chat_id=sender_chat_id
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def unban_chat_sender_chat(
         self, chat_id: typing.Union[str, int], sender_chat_id: int
@@ -649,10 +663,7 @@ class KiranCaller:
                 chat_id=chat_id, sender_chat_id=sender_chat_id
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def set_chat_permissions(
         self,
@@ -668,10 +679,7 @@ class KiranCaller:
                 use_independent_chat_permissions=use_independent_chat_permissions,
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def export_chat_invite_link(
         self, chat_id: typing.Union[str, int]
@@ -680,10 +688,7 @@ class KiranCaller:
             method=TelegramMethodName.EXPORT_CHAT_INVITE_LINK,
             params=self.build_params(chat_id=chat_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return None
+        return response.json()["result"] if response is not None else None
 
     async def create_chat_invite_link(
         self,
@@ -756,10 +761,7 @@ class KiranCaller:
             method=TelegramMethodName.APPROVE_CHAT_JOIN_REQUEST,
             params=self.build_params(chat_id=chat_id, user_id=user_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def decline_chat_join_request(
         self, chat_id: typing.Union[str, int], user_id: int
@@ -768,10 +770,7 @@ class KiranCaller:
             method=TelegramMethodName.DECLINE_CHAT_JOIN_REQUEST,
             params=self.build_params(chat_id=chat_id, user_id=user_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def set_chat_photo(
         self, chat_id: typing.Union[str, int], photo: typing.BinaryIO
@@ -780,20 +779,14 @@ class KiranCaller:
             method=TelegramMethodName.SET_CHAT_PHOTO,
             params=self.build_params(chat_id=chat_id, photo=photo),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def delete_chat_photo(self, chat_id: typing.Union[str, int]) -> bool:
         response = await self._make_request(
             method=TelegramMethodName.DELETE_CHAT_PHOTO,
             params=self.build_params(chat_id=chat_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def set_chat_title(
         self, chat_id: typing.Union[str, int], title: str
@@ -802,10 +795,7 @@ class KiranCaller:
             method=TelegramMethodName.SET_CHAT_TITLE,
             params=self.build_params(chat_id=chat_id, title=title),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def set_chat_description(
         self, chat_id: typing.Union[str, int], description: str
@@ -814,10 +804,7 @@ class KiranCaller:
             method=TelegramMethodName.SET_CHAT_DESCRIPTION,
             params=self.build_params(chat_id=chat_id, description=description),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def pin_chat_message(
         self,
@@ -833,10 +820,7 @@ class KiranCaller:
                 disable_notification=disable_notification,
             ),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def unpin_chat_message(
         self, chat_id: typing.Union[str, int], message_id: int
@@ -845,10 +829,7 @@ class KiranCaller:
             method=TelegramMethodName.UNPIN_CHAT_MESSAGE,
             params=self.build_params(chat_id=chat_id, message_id=message_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def unpin_all_chat_messages(
         self, chat_id: typing.Union[str, int]
@@ -857,20 +838,14 @@ class KiranCaller:
             method=TelegramMethodName.UNPIN_ALL_CHAT_MESSAGES,
             params=self.build_params(chat_id=chat_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def leave_chat(self, chat_id: typing.Union[str, int]) -> bool:
         response = await self._make_request(
             method=TelegramMethodName.LEAVE_CHAT,
             params=self.build_params(chat_id=chat_id),
         )
-        if response is not None:
-            return response.json()["result"]
-        else:
-            return False
+        return response.json()["result"] if response is not None else False
 
     async def get_chat(
         self, chat_id: typing.Union[str, int]
@@ -906,7 +881,7 @@ class KiranCaller:
         )
         if response is not None:
             print(self._get_bytes(response))
-            ps = msgspec.json.decode(
+            return msgspec.json.decode(
                 self._get_bytes(response),
                 type=typing.Sequence[
                     typing.Union[
@@ -920,7 +895,419 @@ class KiranCaller:
                 ],
                 strict=False,
             )
-            return ps
+        else:
+            return None
+
+    async def send_document(
+        self,
+        chat_id: typing.Union[str, int],
+        document: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        thumbnail: typing.Optional[typing.Union[typing.BinaryIO, str]] = None,
+        caption: typing.Optional[str] = None,
+        caption_entities: typing.Optional[
+            typing.Sequence[MessageEntity]
+        ] = None,
+        parse_mode: typing.Optional[ParseMode] = None,
+        disable_content_type_detection: typing.Optional[bool] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_DOCUMENT,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                caption=caption,
+                caption_entities=caption_entities,
+                parse_mode=parse_mode,
+                disable_content_type_detection=disable_content_type_detection,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(document=document, thumbnail=thumbnail),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_photo(
+        self,
+        chat_id: typing.Union[str, int],
+        photo: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        caption: typing.Optional[str] = None,
+        caption_entities: typing.Optional[
+            typing.Sequence[MessageEntity]
+        ] = None,
+        show_caption_above_media: typing.Optional[bool] = None,
+        has_spoiler: typing.Optional[bool] = None,
+        parse_mode: typing.Optional[ParseMode] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_PHOTO,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                caption=caption,
+                caption_entities=caption_entities,
+                show_caption_above_media=show_caption_above_media,
+                has_spoiler=has_spoiler,
+                parse_mode=parse_mode,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(photo=photo),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_audio(
+        self,
+        chat_id: typing.Union[str, int],
+        audio: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        caption: typing.Optional[str] = None,
+        caption_entities: typing.Optional[
+            typing.Sequence[MessageEntity]
+        ] = None,
+        parse_mode: typing.Optional[str] = None,
+        duration: typing.Optional[int] = None,
+        performer: typing.Optional[str] = None,
+        title: typing.Optional[str] = None,
+        thumbnail: typing.Optional[typing.Union[typing.BinaryIO, str]] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_AUDIO,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                caption=caption,
+                caption_entities=caption_entities,
+                parse_mode=parse_mode,
+                duration=duration,
+                performer=performer,
+                title=title,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(audio=audio, thumbnail=thumbnail),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_video(
+        self,
+        chat_id: typing.Union[str, int],
+        video: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        duration: typing.Optional[int] = None,
+        width: typing.Optional[int] = None,
+        height: typing.Optional[int] = None,
+        thumbnail: typing.Optional[typing.Union[typing.BinaryIO, str]] = None,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Optional[str] = None,
+        caption_entities: typing.Optional[
+            typing.Sequence[MessageEntity]
+        ] = None,
+        show_caption_above_media: typing.Optional[bool] = None,
+        has_spoiler: typing.Optional[bool] = None,
+        supports_streaming: typing.Optional[bool] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_VIDEO,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                duration=duration,
+                width=width,
+                height=height,
+                caption=caption,
+                parse_mode=parse_mode,
+                caption_entities=caption_entities,
+                show_caption_above_media=show_caption_above_media,
+                has_spoiler=has_spoiler,
+                supports_streaming=supports_streaming,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(video=video, thumbnail=thumbnail),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_animation(
+        self,
+        chat_id: typing.Union[str, int],
+        animation: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        duration: typing.Optional[int] = None,
+        width: typing.Optional[int] = None,
+        height: typing.Optional[int] = None,
+        thumbnail: typing.Optional[typing.Union[typing.BinaryIO, str]] = None,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Optional[str] = None,
+        caption_entities: typing.Optional[
+            typing.Sequence[MessageEntity]
+        ] = None,
+        show_caption_above_media: typing.Optional[bool] = None,
+        has_spoiler: typing.Optional[bool] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_ANIMATION,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                duration=duration,
+                width=width,
+                height=height,
+                caption=caption,
+                parse_mode=parse_mode,
+                caption_entities=caption_entities,
+                show_caption_above_media=show_caption_above_media,
+                has_spoiler=has_spoiler,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(animation=animation, thumbnail=thumbnail),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_voice(
+        self,
+        chat_id: typing.Union[str, int],
+        voice: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Optional[str] = None,
+        caption_entities: typing.Optional[
+            typing.Sequence[MessageEntity]
+        ] = None,
+        duration: typing.Optional[int] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_VOICE,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                caption=caption,
+                parse_mode=parse_mode,
+                caption_entities=caption_entities,
+                duration=duration,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(voice=voice),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_video_note(
+        self,
+        chat_id: typing.Union[str, int],
+        video_note: typing.Union[typing.BinaryIO, str],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        duration: typing.Optional[int] = None,
+        length: typing.Optional[int] = None,
+        thumbnail: typing.Optional[typing.Union[typing.BinaryIO, str]] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_VIDEO_NOTE,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                duration=duration,
+                length=length,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+            file=self.build_params(video_note=video_note, thumbnail=thumbnail),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
+        else:
+            return None
+
+    async def send_dice(
+        self,
+        chat_id: typing.Union[str, int],
+        business_connection_id: typing.Optional[str] = None,
+        message_thread_id: typing.Optional[int] = None,
+        emoji: typing.Optional[str] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        reply_markup: typing.Optional[
+            typing.Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ) -> typing.Optional[Message]:
+        response = await self._make_post(
+            method=TelegramMethodName.SEND_DICE,
+            data=self.build_params(
+                business_connection_id=business_connection_id,
+                message_thread_id=message_thread_id,
+                chat_id=chat_id,
+                emoji=emoji,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                message_effect_id=message_effect_id,
+                reply_to_message_id=reply_to_message_id,
+                reply_markup=reply_markup,
+            ),
+        )
+        if response is not None:
+            return msgspec.json.decode(
+                self._get_bytes(response), type=Message, strict=False
+            )
         else:
             return None
 
@@ -933,8 +1320,8 @@ class KiranCaller:
         language_code_iso: typing.Optional[
             typing.Union[str, LanguageCode]
         ] = None,
-    ) -> None:
-        await self._make_request(
+    ) -> bool:
+        response = await self._make_request(
             method=TelegramMethodName.SET_MY_COMMANDS,
             params=self.build_params(
                 commands=bot_commands,
@@ -942,3 +1329,13 @@ class KiranCaller:
                 language_code=language_code_iso,
             ),
         )
+        return response.json()["result"] if response is not None else False
+        
+    async def delete_command(self, scope: BotCommandScope, language_code: typing.Union[LanguageCode, str])->bool:
+        response = await self._make_request(
+            method=TelegramMethodName.DELETE_MY_COMMANDS,
+            params=self.build_params(scope=scope, language_code=language_code),
+        )
+        return response.json()["result"] if response is not None else False
+
+        

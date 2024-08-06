@@ -123,7 +123,7 @@ class Document(msgspec.Struct):
     """
     Unique identifier for this file, which is supposed to be the same over time and for different bots. Can't be used to download or reuse the file.
     """
-    thumbnail: typing.Optional[PhotoSize]
+    thumbnail: typing.Optional[PhotoSize] = None
     """
     Document thumbnail as defined by sender
     """

@@ -294,102 +294,6 @@ class BusinessIntro(msgspec.Struct):
     """
 
 
-class ChatFullInfo(Chat):
-    """A instance representing a grouped information of a chat."""
-
-    accent_color_id: typing.Optional[int] = None
-    """
-    Identifier of the accent color for the chat name and backgrounds of the chat photo, reply header, and link preview.
-    """
-    max_reaction_count: typing.Optional[int] = None
-    """
-    Maximum number of messages of the specified type in the chat
-    """
-    photo: typing.Optional[ChatPhoto] = None
-    """
-    Chat photo, if any.
-    """
-    active_usernames: typing.Optional[typing.List[str]] = None
-    """
-    If non-empty, the list of [all active chat usernames;](https://telegram.org/blog/topics-in-groups-collectible-usernames#collectible-usernames) for private chats, supergroups and channels
-    """
-    birthdate: typing.Optional[BirthDate] = None
-    """
-    For private chats, the date of birth of the user.
-    """
-    business_intro: typing.Optional[BusinessIntro] = None
-    """
-    For private chats with business accounts, the intro of the business
-    """
-    business_location: typing.Optional[BusinessLocation] = None
-    """
-    For private chats with business accounts, the location of the business
-    """
-    business_opening_hours: typing.Optional[BusinessOpeningHours] = None
-    """
-    For private chats with business accounts, the opening hours of the business
-    """
-    personal_chat: typing.Optional[Chat] = None
-    """
-    For private chats, the personal channel of the user
-    """
-    available_reactions: typing.Optional[
-        typing.List[typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]]
-    ] = None
-    """
-    List of available reactions allowed in the chat. If omitted, then all [emoji reactions](https://core.telegram.org/bots/api#reactiontypeemoji) are allowed.
-    """
-    background_custom_emoji_id: typing.Optional[str] = None
-    """
-    Custom emoji identifier of the emoji chosen by the chat for the reply header and link preview background
-    """
-    profile_accent_color_id: typing.Optional[int] = None
-    """
-    Identifier of the accent color for the chat's profile background. See [profile accent colors](https://core.telegram.org/bots/api#profile-accent-colors) for more details.
-    """
-    profile_background_custom_emoji_id: typing.Optional[str] = None
-    """
-    Custom emoji identifier of the emoji chosen by the chat for its profile background.
-    """
-    emoji_status_custom_emoji_id: typing.Optional[str] = None
-    """
-    Custom emoji identifier of the emoji status of the chat or the other party in a private chat.
-    """
-    emoji_status_expiration_date: typing.Optional[int] = None
-    """
-    Expiration date of the emoji status of the chat or the other party in a private chat, in Unix time, if any.
-    """
-    bio: typing.Optional[str] = None
-    """
-    Bio of the other party in a private chat.
-    """
-    has_private_forwards: typing.Optional[bool] = False
-    """
-    True, if privacy settings of the other party in the private chat allows to use `tg://user?id=<user_id>` links only in chats with the user.
-    """
-    has_restricted_voice_and_video_messages: typing.Optional[bool] = False
-    """
-    True, if the privacy settings of the other party restrict sending voice and video note messages in the private chat.
-    """
-    join_to_send_messages: typing.Optional[bool] = False
-    """
-    True, if users need to join the supergroup before they can send messages.
-    """
-    join_by_request: typing.Optional[bool] = False
-    """
-    True, if all users directly joining the supergroup without using an invite link need to be approved by supergroup administrators.
-    """
-    description: typing.Optional[str] = None
-    """
-    Description, for groups, supergroups and channel chats.
-    """
-    invite_link: typing.Optional[str] = None
-    """
-    Primary invite link, for groups, supergroups and channel chats
-    """
-    pinned_message: typing.Optional["Message"] = None
-
-
 class MessageAutoDeleteTimerChanged(msgspec.Struct):
     """This object represents a service message about a change in auto-delete timer settings."""
 
@@ -449,6 +353,229 @@ class InaccessibleMessage(msgspec.Struct, tag=True):
     date: int
     """
     Always 0. The field can be used to differentiate regular and inaccessible messages.
+    """
+
+
+class ChatMessage(msgspec.Struct, tag=True):
+    """A telegram message."""
+
+    message_id: int
+    """
+    Unique message identifier inside this chat
+    """
+    chat: Chat
+    """
+    Conversation the message belongs to.
+    """
+    message_thread_id: typing.Optional[int] = None
+    """
+    Unique identifier of a message thread to which the message belongs; for supergroups only
+    """
+    sender_chat: typing.Optional[Chat] = None
+    """
+    Sender of the message, sent on behalf of a chat. For example, the channel itself for channel posts, the supergroup itself for messages from anonymous group administrators, the linked channel for messages automatically forwarded to the discussion group. For backward compatibility, the field from contains a fake sender user in non-channel chats, if the message was sent on behalf of a chat.
+    """
+    sender_boost_count: typing.Optional[int] = None
+    """
+    If the sender of the message boosted the chat, the number of boosts added by the user.
+    """
+    sender_business_bot: typing.Optional[User] = None
+    """
+    The bot that actually sent the message on behalf of the business account. Available only for outgoing messages sent on behalf of the connected business account.
+    """
+    business_connection_id: typing.Optional[int] = None
+    """
+    Unique identifier of the business connection from which the message was received. If non-empty, the message belongs to a chat of the corresponding business account that is independent from any potential bot chat which might share the same identifier.
+    """
+    forward_origin: typing.Optional[typing.Type[BaseMessageOrigin]] = None
+    """
+    Information about the original message for forwarded messages.
+    """
+    is_topic_message: typing.Optional[bool] = False
+    """
+    True, if the message is sent to a forum topic.
+    """
+    is_automatic_forward: typing.Optional[bool] = False
+    """
+    True, if the message is a channel post that was automatically forwarded to the connected discussion group.
+    """
+    reply_to_message: typing.Optional["Message"] = None
+    """
+    For replies in the same chat and message thread, the original message. Note that the Message object in this field will not contain further reply_to_message fields even if it itself is a reply.
+    """
+    external_reply: typing.Optional[ExternalReplyInfo] = None
+    """
+    Information about the message that is being replied to, which may come from another chat or forum topic.
+    """
+    quote: typing.Optional[TextQuote] = None
+    """
+    For replies that quote part of the original message, the quoted part of the message.
+    """
+    reply_to_story: typing.Optional[Story] = None
+    """
+    For replies to a story, the original story.
+    """
+    via_bot: typing.Optional[User] = None
+    """
+    Bot through which the message was sent.
+    """
+    edit_date: typing.Optional[int] = None
+    """
+    Date the message was last edited in Unix time.
+    """
+    has_protected_content: typing.Optional[bool] = False
+    """
+    True, if the message can't be forwarded.
+    """
+    is_from_offline: typing.Optional[bool] = False
+    """
+    True, if the message was sent by an implicit action, for example, as an away or a greeting business message, or as a scheduled message.
+    """
+    media_group_id: typing.Optional[str] = None
+    """
+    The unique identifier of a media message group this message belongs to.
+    """
+    author_signature: typing.Optional[str] = None
+    """
+    Signature of the post author for messages in channels, or the custom title of an anonymous group administrator.
+    """
+    text: typing.Optional[str] = None
+    """
+    For text messages, the actual UTF-8 text of the message.
+    """
+    entities: typing.Optional[typing.List[MessageEntity]] = None
+    """
+    For text messages, special entities like usernames, URLs, bot commands, etc. that appear in the text.
+    """
+    link_preview_options: typing.Optional[LinkPreviewOptions] = None
+    """
+    Options used for link preview generation for the message, if it is a text message and link preview options were changed.
+    """
+    effect_id: typing.Optional[str] = None
+    """
+    Unique identifier of the message effect added to the message, if any.
+    """
+    animation: typing.Optional[Animation] = None
+    """
+    Original animation filename as defined by sender
+    """
+    audio: typing.Optional[Audio] = None
+    """
+    Original audio filename as defined by sender
+    """
+    document: typing.Optional[Document] = None
+    """
+    Message is a general file, information about the file.
+    """
+    photo: typing.Optional[typing.List[PhotoSize]] = None
+    """
+    Message is a photo, available sizes of the photo.
+    """
+    sticker: typing.Optional[Sticker] = None
+    """
+    Message is a sticker, information about the sticker.
+    """
+    story: typing.Optional[Story] = None
+    """
+    Message is a forwarded story.
+    """
+    video: typing.Optional[Video] = None
+    """
+    Message is a video, information about the video.
+    """
+    video_note: typing.Optional[VideoNote] = None
+    """
+    Message is a [video note](https://telegram.org/blog/video-messages-and-telescope), information about the video message
+    """
+    voice: typing.Optional[Voice] = None
+    """
+    Message is a voice message, information about the file
+    """
+    caption: typing.Optional[str] = None
+    """
+    Caption for the animation, audio, document, photo, video or voice
+    """
+    caption_entities: typing.Optional[typing.List[MessageEntity]] = None
+    """
+    For messages with a caption, special entities like usernames, URLs, bot commands, etc. that appear in the caption
+    """
+    show_caption_above_media: typing.Optional[bool] = False
+    """
+    True, if the caption must be shown above the message media
+    """
+    has_media_spoiler: typing.Optional[bool] = False
+    """
+    True, if the message media is covered by a spoiler animation
+    """
+    contact: typing.Optional[Contact] = None
+    """
+    Message is a shared contact, information about the contact
+    """
+    dice: typing.Optional[Dice] = None
+    """
+    Message is a dice with random value
+    """
+    game: typing.Optional[Game] = None
+    """
+    Message is a game, information about the game. [More about games »](https://core.telegram.org/bots/api#games)
+    """
+    poll: typing.Optional[Poll] = None
+    """
+    Message is a native poll, information about the poll
+    """
+    venue: typing.Optional[Venue] = None
+    """
+    Message is a venue, information about the venue. For backward compatibility, when this field is set, the location field will also be set.
+    """
+    location: typing.Optional[Location] = None
+    """
+    Message is a shared location, information about the location
+    """
+    new_chat_members: typing.Optional[typing.List[User]] = None
+    """
+    New members that were added to the group or supergroup and information about them (the bot itself may be one of these members)
+    """
+    left_chat_member: typing.Optional[User] = None
+    """
+    A member was removed from the group, information about them (this member may be the bot itself)
+    """
+    new_chat_title: typing.Optional[str] = None
+    """
+    A chat title was changed to this value
+    """
+    new_chat_photo: typing.Optional[typing.List[PhotoSize]] = None
+    """
+    A chat photo was change to this value
+    """
+    deleted_chat_photo: typing.Optional[bool] = False
+    """
+    Service message: the chat photo was deleted
+    """
+    group_chat_created: typing.Optional[bool] = False
+    """
+    Service message: the group has been created
+    """
+    supergroup_chat_created: typing.Optional[bool] = False
+    """
+    Service message: the supergroup has been created. This field can't be received in a message coming through updates, because bot can't be a member of a supergroup when it is created. It can only be found in `reply_to_message` if someone replies to a very first message in a directly created supergroup.
+    """
+    channel_chat_created: typing.Optional[bool] = False
+    """
+    Service message: the channel has been created. This field can't be received in a message coming through updates, because bot can't be a member of a channel when it is created. It can only be found in `reply_to_message` if someone replies to a very first message in a channel.
+    """
+    message_auto_delete_timer_changed: typing.Optional[
+        MessageAutoDeleteTimerChanged
+    ] = None
+    """
+    Service message: auto-delete timer settings changed in the chat.
+    """
+    migrate_from_chat_id: typing.Optional[int] = None
+    """
+    The supergroup has been migrated from a group with the specified identifier. 
+    """
+    from_user: typing.Optional[User] = msgspec.field(name="from", default=None)
+    """
+    Sender of the message; empty for messages sent to channels. For backward compatibility, the field contains a fake sender user in non-channel chats, if the message was sent on behalf of a chat.
     """
 
 
@@ -670,7 +797,7 @@ class Message(msgspec.Struct, tag=True):
     The supergroup has been migrated from a group with the specified identifier. 
     """
     pinned_message: typing.Optional[
-        typing.Union["Message", InaccessibleMessage]
+        typing.Union[ChatMessage, InaccessibleMessage]
     ] = None
 
     from_user: typing.Optional[User] = msgspec.field(name="from", default=None)
@@ -921,3 +1048,99 @@ class ChatMemberBanned(ChatMember, tag="kicked"):
     """
     Date when restrictions will be lifted for this user; Unix time. If 0, then the user is banned forever
     """
+
+
+class ChatFullInfo(Chat):
+    """A instance representing a grouped information of a chat."""
+
+    accent_color_id: typing.Optional[int] = None
+    """
+    Identifier of the accent color for the chat name and backgrounds of the chat photo, reply header, and link preview.
+    """
+    max_reaction_count: typing.Optional[int] = None
+    """
+    Maximum number of messages of the specified type in the chat
+    """
+    photo: typing.Optional[ChatPhoto] = None
+    """
+    Chat photo, if any.
+    """
+    active_usernames: typing.Optional[typing.List[str]] = None
+    """
+    If non-empty, the list of [all active chat usernames;](https://telegram.org/blog/topics-in-groups-collectible-usernames#collectible-usernames) for private chats, supergroups and channels
+    """
+    birthdate: typing.Optional[BirthDate] = None
+    """
+    For private chats, the date of birth of the user.
+    """
+    business_intro: typing.Optional[BusinessIntro] = None
+    """
+    For private chats with business accounts, the intro of the business
+    """
+    business_location: typing.Optional[BusinessLocation] = None
+    """
+    For private chats with business accounts, the location of the business
+    """
+    business_opening_hours: typing.Optional[BusinessOpeningHours] = None
+    """
+    For private chats with business accounts, the opening hours of the business
+    """
+    personal_chat: typing.Optional[Chat] = None
+    """
+    For private chats, the personal channel of the user
+    """
+    available_reactions: typing.Optional[
+        typing.List[typing.Union[ReactionTypeCustomEmoji, ReactionTypeEmoji]]
+    ] = None
+    """
+    List of available reactions allowed in the chat. If omitted, then all [emoji reactions](https://core.telegram.org/bots/api#reactiontypeemoji) are allowed.
+    """
+    background_custom_emoji_id: typing.Optional[str] = None
+    """
+    Custom emoji identifier of the emoji chosen by the chat for the reply header and link preview background
+    """
+    profile_accent_color_id: typing.Optional[int] = None
+    """
+    Identifier of the accent color for the chat's profile background. See [profile accent colors](https://core.telegram.org/bots/api#profile-accent-colors) for more details.
+    """
+    profile_background_custom_emoji_id: typing.Optional[str] = None
+    """
+    Custom emoji identifier of the emoji chosen by the chat for its profile background.
+    """
+    emoji_status_custom_emoji_id: typing.Optional[str] = None
+    """
+    Custom emoji identifier of the emoji status of the chat or the other party in a private chat.
+    """
+    emoji_status_expiration_date: typing.Optional[int] = None
+    """
+    Expiration date of the emoji status of the chat or the other party in a private chat, in Unix time, if any.
+    """
+    bio: typing.Optional[str] = None
+    """
+    Bio of the other party in a private chat.
+    """
+    has_private_forwards: typing.Optional[bool] = False
+    """
+    True, if privacy settings of the other party in the private chat allows to use `tg://user?id=<user_id>` links only in chats with the user.
+    """
+    has_restricted_voice_and_video_messages: typing.Optional[bool] = False
+    """
+    True, if the privacy settings of the other party restrict sending voice and video note messages in the private chat.
+    """
+    join_to_send_messages: typing.Optional[bool] = False
+    """
+    True, if users need to join the supergroup before they can send messages.
+    """
+    join_by_request: typing.Optional[bool] = False
+    """
+    True, if all users directly joining the supergroup without using an invite link need to be approved by supergroup administrators.
+    """
+    description: typing.Optional[str] = None
+    """
+    Description, for groups, supergroups and channel chats.
+    """
+    invite_link: typing.Optional[str] = None
+    """
+    Primary invite link, for groups, supergroups and channel chats
+    """
+    pinned_message: typing.Optional[Message] = None
